@@ -1,17 +1,51 @@
+import { promptLibrary } from './data/prompts.js';
+
 const state = {
-  items: [],
-  currentIndex: 0,
-  viewerMode: localStorage.getItem('tubeFactoryViewerMode') || 'detail',
+  activeCategoryId: promptLibrary.categories[0]?.id ?? '',
+  activePromptId: promptLibrary.categories[0]?.prompts[0]?.id ?? '',
+  query: '',
 };
 
-const galleryEl = document.getElementById('gallery');
-const lightboxEl = document.getElementById('lightbox');
-const lightboxInnerEl = document.getElementById('lightbox-inner');
+const categoryNavEl = document.getElementById('category-nav');
+const promptListEl = document.getElementById('prompt-list');
+const promptCountEl = document.getElementById('prompt-count');
+const searchInputEl = document.getElementById('search-input');
+const detailTitleEl = document.getElementById('detail-title');
+const detailCategoryEl = document.getElementById('detail-category');
+const detailDescriptionEl = document.getElementById('detail-description');
+const detailMetaEl = document.getElementById('detail-meta');
+const detailContentEl = document.getElementById('detail-content');
+const copyPromptBtnEl = document.getElementById('copy-prompt-btn');
+const copyFullBtnEl = document.getElementById('copy-full-btn');
+const mobileCategorySelectEl = document.getElementById('mobile-category-select');
+const emptyStateEl = document.getElementById('empty-state');
+const detailPanelEl = document.getElementById('detail-panel');
 const toastEl = document.getElementById('toast');
-const viewerButtons = {
-  detail: document.getElementById('viewer-detail-btn'),
-  fullscreen: document.getElementById('viewer-fullscreen-btn'),
-};
+
+function flattenPrompts() {
+  return promptLibrary.categories.flatMap((category) =>
+    category.prompts.map((prompt) => ({ ...prompt, categoryId: category.id, categoryName: category.name })),
+  );
+}
+
+function getPromptById(promptId) {
+  return flattenPrompts().find((prompt) => prompt.id === promptId);
+}
+
+function getFilteredPrompts(categoryId, query) {
+  const normalized = query.trim().toLowerCase();
+  const category = promptLibrary.categories.find((item) => item.id === categoryId);
+  if (!category) return [];
+
+  if (!normalized) {
+    return category.prompts;
+  }
+
+  return category.prompts.filter((prompt) => {
+    const haystack = `${prompt.title} ${prompt.summary} ${prompt.content}`.toLowerCase();
+    return haystack.includes(normalized);
+  });
+}
 
 function escapeHtml(value) {
   return value
@@ -21,157 +55,133 @@ function escapeHtml(value) {
     .replaceAll('"', '&quot;');
 }
 
-function showToast() {
+function showToast(message) {
+  toastEl.textContent = message;
   toastEl.classList.add('show');
-  window.setTimeout(() => toastEl.classList.remove('show'), 2200);
+  window.clearTimeout(showToast.timer);
+  showToast.timer = window.setTimeout(() => toastEl.classList.remove('show'), 1800);
 }
 
-async function copyPrompt(index) {
-  await navigator.clipboard.writeText(state.items[index].prompt);
-  showToast();
-  const button = document.getElementById('lb-copy-btn');
-  if (!button) return;
-
-  const original = button.innerHTML;
-  button.classList.add('copied');
-  button.innerHTML = '<span>복사 완료!</span>';
-  window.setTimeout(() => {
-    button.classList.remove('copied');
-    button.innerHTML = original;
-  }, 1600);
+async function copyText(text, message) {
+  await navigator.clipboard.writeText(text);
+  showToast(message);
 }
 
-function setViewerMode(mode) {
-  state.viewerMode = mode === 'fullscreen' ? 'fullscreen' : 'detail';
-  localStorage.setItem('tubeFactoryViewerMode', state.viewerMode);
-  viewerButtons.detail.classList.toggle('active', state.viewerMode === 'detail');
-  viewerButtons.fullscreen.classList.toggle('active', state.viewerMode === 'fullscreen');
-
-  if (lightboxEl.classList.contains('active')) {
-    renderLightbox(state.currentIndex);
-  }
-}
-
-function renderCards() {
-  galleryEl.innerHTML = state.items
+function renderCategories() {
+  categoryNavEl.innerHTML = promptLibrary.categories
     .map(
-      (item, index) => `
-        <article class="card" data-index="${index}">
-          <div class="card-img-wrap">
-            ${item.tag ? `<span class="tag-badge">${escapeHtml(item.tag)}</span>` : ''}
-            <img src="${item.image}" alt="${escapeHtml(item.name)}" loading="lazy" decoding="async" />
-          </div>
-          <div class="card-body">
-            <h3 class="card-title">${escapeHtml(item.name)}</h3>
-            <p class="card-prompt">${escapeHtml(item.prompt)}</p>
-            <button class="copy-btn" type="button" data-copy-index="${index}">프롬프트 복사</button>
-          </div>
-        </article>
+      (category) => `
+        <button
+          class="category-link ${category.id === state.activeCategoryId ? 'active' : ''}"
+          type="button"
+          data-category-id="${category.id}"
+        >
+          <span>${escapeHtml(category.name)}</span>
+          <strong>${category.prompts.length}</strong>
+        </button>
+      `,
+    )
+    .join('');
+
+  mobileCategorySelectEl.innerHTML = promptLibrary.categories
+    .map(
+      (category) => `
+        <option value="${category.id}" ${category.id === state.activeCategoryId ? 'selected' : ''}>
+          ${escapeHtml(category.name)} (${category.prompts.length})
+        </option>
       `,
     )
     .join('');
 }
 
-function renderLightbox(index) {
-  const item = state.items[index];
-  state.currentIndex = index;
-  lightboxEl.classList.toggle('fullscreen-mode', state.viewerMode === 'fullscreen');
+function renderPromptList() {
+  const filteredPrompts = getFilteredPrompts(state.activeCategoryId, state.query);
+  promptCountEl.textContent = `${filteredPrompts.length}개`;
 
-  if (state.viewerMode === 'fullscreen') {
-    lightboxInnerEl.innerHTML = `
-      <div class="lb-fullscreen">
-        <div class="lb-fullscreen-media">
-          <img src="${item.image}" alt="${escapeHtml(item.name)}" />
-        </div>
-        <div class="lb-fullscreen-bottom">
-          <div class="lb-fullscreen-top">
-            <div class="lb-fullscreen-title">
-              <h2>${escapeHtml(item.name)}</h2>
-              ${item.tag ? `<span class="lb-tag">${escapeHtml(item.tag)}</span>` : ''}
-            </div>
-            <button class="lb-copy-btn compact" id="lb-copy-btn" type="button">프롬프트 복사</button>
-          </div>
-          <p class="lb-fullscreen-prompt">${escapeHtml(item.prompt)}</p>
-        </div>
-      </div>
-    `;
-  } else {
-    lightboxInnerEl.innerHTML = `
-      <div class="lb-media">
-        <img src="${item.image}" alt="${escapeHtml(item.name)}" />
-      </div>
-      <div class="lb-info">
-        <h2>${escapeHtml(item.name)}</h2>
-        ${item.tag ? `<span class="lb-tag">${escapeHtml(item.tag)}</span>` : ''}
-        <div class="lb-prompt-label">PROMPT</div>
-        <p class="lb-prompt">${escapeHtml(item.prompt)}</p>
-        <button class="lb-copy-btn" id="lb-copy-btn" type="button">프롬프트 복사</button>
-      </div>
-    `;
+  if (!filteredPrompts.length) {
+    promptListEl.innerHTML = '';
+    emptyStateEl.hidden = false;
+    detailPanelEl.hidden = true;
+    return;
   }
 
-  document.getElementById('lb-copy-btn')?.addEventListener('click', () => copyPrompt(index));
+  emptyStateEl.hidden = true;
+  detailPanelEl.hidden = false;
+
+  if (!filteredPrompts.some((prompt) => prompt.id === state.activePromptId)) {
+    state.activePromptId = filteredPrompts[0].id;
+  }
+
+  promptListEl.innerHTML = filteredPrompts
+    .map(
+      (prompt) => `
+        <button
+          class="prompt-link ${prompt.id === state.activePromptId ? 'active' : ''}"
+          type="button"
+          data-prompt-id="${prompt.id}"
+        >
+          <span class="prompt-link-title">${escapeHtml(prompt.title)}</span>
+          <span class="prompt-link-summary">${escapeHtml(prompt.summary)}</span>
+        </button>
+      `,
+    )
+    .join('');
 }
 
-function openLightbox(index) {
-  renderLightbox(index);
-  lightboxEl.classList.add('active');
-  document.body.classList.add('lock-scroll');
+function renderPromptDetail() {
+  const activePrompt = getPromptById(state.activePromptId);
+  if (!activePrompt) return;
+
+  detailTitleEl.textContent = activePrompt.title;
+  detailCategoryEl.textContent = activePrompt.categoryName;
+  detailDescriptionEl.textContent = activePrompt.summary;
+  detailMetaEl.textContent = `${activePrompt.tags.join(' · ')} · ${activePrompt.content.split('\n').length} lines`;
+  detailContentEl.textContent = activePrompt.content.trim();
+
+  copyPromptBtnEl.onclick = () => copyText(activePrompt.content.trim(), '프롬프트를 복사했습니다.');
+  copyFullBtnEl.onclick = () =>
+    copyText(
+      `${activePrompt.title}\n\n${activePrompt.content.trim()}`,
+      '제목과 프롬프트를 함께 복사했습니다.',
+    );
 }
 
-function closeLightbox() {
-  lightboxEl.classList.remove('active', 'fullscreen-mode');
-  document.body.classList.remove('lock-scroll');
+function render() {
+  renderCategories();
+  renderPromptList();
+  renderPromptDetail();
 }
 
-function moveLightbox(step) {
-  const next = (state.currentIndex + step + state.items.length) % state.items.length;
-  renderLightbox(next);
-}
+categoryNavEl.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-category-id]');
+  if (!button) return;
 
-async function init() {
-  const response = await fetch('./data/gallery.json');
-  const data = await response.json();
-  state.items = data.items;
-
-  document.getElementById('page-title').textContent = data.title;
-  document.getElementById('page-subtitle').textContent = `${data.subtitle} | 카드를 클릭하면 크게 볼 수 있습니다`;
-
-  renderCards();
-  setViewerMode(state.viewerMode);
-
-  galleryEl.addEventListener('click', (event) => {
-    const copyButton = event.target.closest('[data-copy-index]');
-    if (copyButton) {
-      event.stopPropagation();
-      copyPrompt(Number(copyButton.dataset.copyIndex));
-      return;
-    }
-
-    const card = event.target.closest('.card');
-    if (!card) return;
-    openLightbox(Number(card.dataset.index));
-  });
-
-  viewerButtons.detail.addEventListener('click', () => setViewerMode('detail'));
-  viewerButtons.fullscreen.addEventListener('click', () => setViewerMode('fullscreen'));
-  document.getElementById('lb-close').addEventListener('click', closeLightbox);
-  document.getElementById('lb-prev').addEventListener('click', () => moveLightbox(-1));
-  document.getElementById('lb-next').addEventListener('click', () => moveLightbox(1));
-
-  lightboxEl.addEventListener('click', (event) => {
-    if (event.target === lightboxEl) closeLightbox();
-  });
-
-  document.addEventListener('keydown', (event) => {
-    if (!lightboxEl.classList.contains('active')) return;
-    if (event.key === 'Escape') closeLightbox();
-    if (event.key === 'ArrowLeft') moveLightbox(-1);
-    if (event.key === 'ArrowRight') moveLightbox(1);
-  });
-}
-
-init().catch((error) => {
-  document.getElementById('page-subtitle').textContent = '갤러리 로딩에 실패했습니다.';
-  console.error(error);
+  state.activeCategoryId = button.dataset.categoryId;
+  state.query = '';
+  searchInputEl.value = '';
+  state.activePromptId = getFilteredPrompts(state.activeCategoryId, '')[0]?.id ?? '';
+  render();
 });
+
+promptListEl.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-prompt-id]');
+  if (!button) return;
+
+  state.activePromptId = button.dataset.promptId;
+  render();
+});
+
+searchInputEl.addEventListener('input', (event) => {
+  state.query = event.target.value;
+  render();
+});
+
+mobileCategorySelectEl.addEventListener('change', (event) => {
+  state.activeCategoryId = event.target.value;
+  state.query = '';
+  searchInputEl.value = '';
+  state.activePromptId = getFilteredPrompts(state.activeCategoryId, '')[0]?.id ?? '';
+  render();
+});
+
+render();
