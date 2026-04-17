@@ -1,0 +1,335 @@
+{
+  "title": "Tube Factory 영상 스타일 갤러리",
+  "subtitle": "총 47개의 스타일",
+  "items": [
+    {
+      "id": 0,
+      "name": "한국웹툰",
+      "tag": "",
+      "prompt": "Korean webtoon illustration style, clean line art, soft gradient shading, subtle highlights, expressive facial features, bright color palette, smooth digital brushwork, high-resolution webtoon panel quality",
+      "image": "./assets/images/01-한국웹툰.jpg"
+    },
+    {
+      "id": 1,
+      "name": "실사풍",
+      "tag": "",
+      "prompt": "photorealistic, ultra realistic, natural skin texture, real korean human proportions, detailed pores and fine hair strands, realistic lighting, soft natural shadows, high dynamic range, professional photography, shallow depth of field, 85mm lens, cinematic color grading",
+      "image": "./assets/images/02-실사풍.jpg"
+    },
+    {
+      "id": 2,
+      "name": "픽사 스타일",
+      "tag": "",
+      "prompt": "Pixar-style 3D animated film look, stylized proportions, expressive large eyes, soft rounded facial structure, high-quality 3D rendering, global illumination, soft cinematic lighting, detailed hair strands, subsurface scattering skin, shallow depth of field, ultra-clean render, emotional storytelling atmosphere",
+      "image": "./assets/images/03-픽사-스타일.jpg"
+    },
+    {
+      "id": 3,
+      "name": "3D 게임 트레일러",
+      "tag": "",
+      "prompt": "epic 3D game trailer style, cinematic lighting, volumetric fog, dynamic action pose, detailed textures, realistic materials, high contrast, depth of field, motion blur, intense atmosphere, Unreal Engine quality, 4k resolution",
+      "image": "./assets/images/04-3d-게임-트레일러.jpg"
+    },
+    {
+      "id": 4,
+      "name": "졸라맨",
+      "tag": "",
+      "prompt": "1명 졸라맨 simple stickman character, round white head, black dot eyes, small open mouth, thin black line body, minimalistic design, clean vector style, cartoon animation style, bright soft colors, smooth shading, 2D animation look, high resolution, expressive pose",
+      "image": "./assets/images/05-졸라맨.png"
+    },
+    {
+      "id": 5,
+      "name": "해골 스타일",
+      "tag": "",
+      "prompt": "1명 해골 스타일 transparent human body showing anatomical skeleton\nmedical 3D rendering\nrealistic anatomy model\nsoft blue rim lighting\nvolumetric light\nultra realistic\nhigh detail bones",
+      "image": "./assets/images/06-해골-스타일.png"
+    },
+    {
+      "id": 6,
+      "name": "일본 애니 스타일",
+      "tag": "",
+      "prompt": "Japanese anime style illustration, clean sharp line art, vibrant cel shading, expressive eyes, dynamic pose, dramatic lighting, colorful background, high resolution anime artwork",
+      "image": "./assets/images/07-일본-애니-스타일.jpg"
+    },
+    {
+      "id": 7,
+      "name": "클레이",
+      "tag": "",
+      "prompt": "claymation stop-motion style, handmade clay figures, chunky 3D texture, fingerprint marks on surface, warm studio lighting, miniature set design, shallow depth of field, Aardman Animations quality, soft shadows, playful character design, 4k resolution",
+      "image": "./assets/images/08-클레이.png"
+    },
+    {
+      "id": 8,
+      "name": "틸트시프트 미니어처",
+      "tag": "",
+      "prompt": "tilt-shift miniature photography style, realistic diorama scene, tiny toy-like world, miniature scale illusion, small plastic-like objects, slightly simplified proportions, smooth toy-like surfaces, subtle shallow depth of field, selective focus on subject, soft foreground and background blur, elevated or top-down angle, clean composition, realistic lighting with soft shadows, balanced colors, playful yet realistic mood, high detail, high resolution, no text, no watermark, full frame",
+      "image": "./assets/images/09-틸트시프트-미니어처.png"
+    },
+    {
+      "id": 9,
+      "name": "무협",
+      "tag": "",
+      "prompt": "wuxia martial arts drama style, grounded jianghu atmosphere, elegant historical Chinese costume, refined swordsmanship aesthetic, ink-wash inspired lighting and texture, restrained cinematic composition, tense emotional storytelling, detailed period architecture and natural landscapes when relevant, realistic fabric movement, subtle mist and atmosphere, dramatic but controlled color palette, high-detail wuxia illustration, 4k resolution",
+      "image": "./assets/images/10-무협.png"
+    },
+    {
+      "id": 10,
+      "name": "수묵화무협",
+      "tag": "",
+      "prompt": "traditional Chinese ink wash painting style, sumi-e brush strokes, splashing ink effects, black and white tones, calligraphy brush texture, rice paper background, minimalist composition, flowing qi energy trails, ancient scroll aesthetic, high contrast",
+      "image": "./assets/images/11-수묵화무협.png"
+    },
+    {
+      "id": 11,
+      "name": "만년필스케치",
+      "tag": "",
+      "prompt": "fountain pen sketch style, fine nib ink drawing, precise thin line work, architectural hatching technique, sepia tone ink on aged paper, subtle ink bleeding, vintage illustration feel, detailed stippling shadows, classic European etching aesthetic, high detail",
+      "image": "./assets/images/12-만년필스케치.png"
+    },
+    {
+      "id": 12,
+      "name": "대두 한국 웹툰",
+      "tag": "",
+      "prompt": "Korean webtoon chibi style, oversized head with soft manhwa features, slim elegant eyes, small refined body, clean digital line art, smooth gradient shading, modern trendy color palette, soft glowing skin tone, minimal nose dot style, neat hair with subtle highlights, warm pastel tones, Naver webtoon aesthetic, cute but stylish proportions, 4k resolution",
+      "image": "./assets/images/13-대두-한국-웹툰.png"
+    },
+    {
+      "id": 13,
+      "name": "레트로 픽셀아트",
+      "tag": "",
+      "prompt": "retro pixel art style, 16-bit era graphics, limited color palette, crisp pixel edges, nostalgic SNES aesthetic, vibrant saturated colors, clean sprite design, soft dithering shading, CRT screen glow effect, classic RPG game feel, 4k resolution",
+      "image": "./assets/images/14-레트로-픽셀아트.png"
+    },
+    {
+      "id": 14,
+      "name": "8비트 패미컴",
+      "tag": "",
+      "prompt": "8-bit NES pixel art style, extremely limited color palette, chunky large pixels, simple bold shapes, bright primary colors, black outlines, flat shading, retro Famicom aesthetic, iconic 1980s game feel, scanline overlay, 4k resolution",
+      "image": "./assets/images/15-8비트-패미컴.png"
+    },
+    {
+      "id": 15,
+      "name": "비주얼노벨 픽셀",
+      "tag": "",
+      "prompt": "visual novel pixel art style, detailed pixel portraits, semi-realistic proportions, rich color shading, dramatic expressions, clean pixel rendering, warm indoor lighting, detailed background, no text overlay, 4k resolution",
+      "image": "./assets/images/16-비주얼노벨-픽셀.png"
+    },
+    {
+      "id": 16,
+      "name": "한국 웹툰 극화체",
+      "tag": "",
+      "prompt": "Korean webtoon realistic style, mature manhwa illustration, sharp clean line art, semi-realistic facial features, strong black outlines, cool desaturated color palette, thriller webtoon aesthetic",
+      "image": "./assets/images/17-한국-웹툰-극화체.png"
+    },
+    {
+      "id": 17,
+      "name": "미국 코믹북",
+      "tag": "",
+      "prompt": "American comic book style, bold black ink outlines, dynamic pose, halftone dot shading, vivid primary colors, strong contrast shadows, retro pop art aesthetic, cinematic comic lighting, no text overlay, no speech bubbles, 4k resolution",
+      "image": "./assets/images/18-미국-코믹북.png"
+    },
+    {
+      "id": 18,
+      "name": "현장 스케치",
+      "tag": "",
+      "prompt": "reportage sketch illustration style, loose expressive pencil and charcoal strokes, muted earthy color wash, quick gestural drawing feel, rough unfinished edges, soft pastel and watercolor tints, realistic human proportions, journalistic documentary sketch aesthetic, visible paper grain texture, subtle warm shadows, hand-drawn observational illustration, no text overlay, 4k resolution",
+      "image": "./assets/images/19-현장-스케치.png"
+    },
+    {
+      "id": 19,
+      "name": "레트로 팝아트 일러스트",
+      "tag": "",
+      "prompt": "retro pop art illustration style, bold flat color blocks, limited vibrant color palette, strong graphic composition, thick clean outlines, vintage 1960s poster aesthetic, screen print texture, geometric simplified shapes, editorial magazine illustration feel, bright yellow and bold primary accents, mid-century modern graphic design, no text overlay, 4k resolution",
+      "image": "./assets/images/20-레트로-팝아트-일러스트.png"
+    },
+    {
+      "id": 20,
+      "name": "일본 애니 극화체",
+      "tag": "",
+      "prompt": "Japanese anime realistic style, mature seinen anime aesthetic, detailed sharp facial features, dramatic serious expression, smooth cel shading with soft gradients, dark moody color palette, cinematic anime lighting, volumetric dust particles, atmospheric depth, clean refined line art, studio Madhouse quality, cold desaturated tones, intense dramatic atmosphere, no text overlay, 4k resolution",
+      "image": "./assets/images/21-일본-애니-극화체.png"
+    },
+    {
+      "id": 21,
+      "name": "스톱모션 퍼펫",
+      "tag": "",
+      "prompt": "stop-motion puppet animation style, realistic sculpted puppet aesthetic, polymer clay texture, glass bead eyes, fabric and felt materials, miniature set design, warm studio lighting, shallow depth of field, handcrafted artisan quality, tactile textures, no text overlay, 4k resolution",
+      "image": "./assets/images/22-스톱모션-퍼펫.png"
+    },
+    {
+      "id": 22,
+      "name": "한국 웹툰 로맨스",
+      "tag": "",
+      "prompt": "Korean webtoon romance style, beautiful manhwa character design, soft delicate facial features, large expressive eyes, flowing silky hair, clean smooth line art, pastel gradient shading, soft glowing skin, gentle warm lighting, elegant refined proportions, polished digital manhwa illustration, no text overlay, 4k resolution",
+      "image": "./assets/images/23-한국-웹툰-로맨스.png"
+    },
+    {
+      "id": 23,
+      "name": "연필스케치",
+      "tag": "",
+      "prompt": "graphite pencil drawing style, detailed hand-drawn pencil strokes, realistic shading with hatching and cross-hatching, soft graphite gradients, visible pencil texture, white paper background, fine detail work, subtle smudge blending, natural light and shadow, elegant monochrome grayscale, no text overlay, 4k resolution",
+      "image": "./assets/images/24-연필스케치.png"
+    },
+    {
+      "id": 24,
+      "name": "옛날 미국 TV 만화 컬러",
+      "tag": "",
+      "prompt": "classic 1950s American cartoon style, Hanna-Barbera aesthetic, bold flat colors, thick round outlines, simple exaggerated expressions, rubbery squash and stretch proportions, retro TV animation cel paint look, limited color palette, cheerful bright tones, mid-century cartoon design, grainy film texture, no text overlay, 4k resolution",
+      "image": "./assets/images/25-옛날-미국-tv-만화-컬러.png"
+    },
+    {
+      "id": 25,
+      "name": "뚱뚱vs마른 로우폴리컨셉",
+      "tag": "",
+      "prompt": "2명 뚱뚱vs마른 로우폴리컨셉 stylized low-poly 3D animation style, exaggerated cartoon proportions, dramatic physique contrast, cinematic lighting, clean simplified environment, vibrant colors, smooth shading, animated film look, dynamic action pose, emotional storytelling scene, wide angle perspective, strong depth of field, YouTube shorts animation style, expressive body language, high contrast lighting, Unreal Engine style render, high detail but simplified geometry, modern animated storytelling visual, 9:16 composition",
+      "image": "./assets/images/26-뚱뚱vs마른-로우폴리컨셉.png"
+    },
+    {
+      "id": 26,
+      "name": "스크래치보드",
+      "tag": "",
+      "prompt": "black background, white ink sketch style, crosshatching lines, high contrast, dark graphic novel illustration, dramatic chiaroscuro lighting, moody atmosphere",
+      "image": "./assets/images/27-스크래치보드.png"
+    },
+    {
+      "id": 27,
+      "name": "지브 스타일",
+      "tag": "",
+      "prompt": "Studio Ghibli animation style, hand-painted watercolor backgrounds, soft pastel color palette, lush detailed nature scenery, gentle warm lighting, nostalgic countryside atmosphere, expressive simple character design, fluffy clouds and wind movement, Hayao Miyazaki aesthetic, dreamy whimsical mood, traditional 2D cel animation, no text overlay, 4k resolution",
+      "image": "./assets/images/28-지브-스타일.png"
+    },
+    {
+      "id": 28,
+      "name": "시네마틱 느와르",
+      "tag": "",
+      "prompt": "film noir atmosphere, black and white monochrome palette, deep shadow dominance, low key lighting, limited light sources, subtle atmospheric haze, moody dark tone, soft contrast balance, cinematic mood, no color, no bright highlights, no overexposure, no stylized composition enforcement, no camera direction influence, no environmental constraint, no text, no watermark",
+      "image": "./assets/images/29-시네마틱-느와르.png"
+    },
+    {
+      "id": 29,
+      "name": "사이버 펑크",
+      "tag": "",
+      "prompt": "cyberpunk neon style, glowing magenta and cyan lights, rainy futuristic city streets, holographic advertisements, wet reflective pavement, dense urban atmosphere, Blade Runner aesthetic, volumetric neon haze, dystopian sci-fi mood, high contrast saturated colors, cinematic depth, no text overlay, 4k resolution",
+      "image": "./assets/images/30-사이버-펑크.png"
+    },
+    {
+      "id": 30,
+      "name": "유화 클래식",
+      "tag": "",
+      "prompt": "classical oil painting style, thick impasto brush strokes, rich layered pigments, Renaissance master aesthetic, warm golden lighting, dramatic chiaroscuro, deep saturated tones, museum quality fine art, visible canvas texture, baroque composition, timeless painterly atmosphere, no text overlay, 4k resolution",
+      "image": "./assets/images/31-유화-클래식.png"
+    },
+    {
+      "id": 31,
+      "name": "수채화 일러스트",
+      "tag": "",
+      "prompt": "traditional watercolor illustration style, soft flowing pigment bleeds, visible paper texture, gentle color washes, delicate ink line accents, light pastel tones, organic edge softness, hand-painted artistic feel, children's book illustration aesthetic, airy bright atmosphere, no text overlay, 4k resolution",
+      "image": "./assets/images/32-수채화-일러스트.png"
+    },
+    {
+      "id": 32,
+      "name": "페이퍼 크래프트",
+      "tag": "",
+      "prompt": "add_2\n만들기\n🍌 Nano Banana 2\ncrop_16_9\n\narrow_forward\n만들기\npaper craft origami style, layered cut paper textures, folded paper shadows, handcrafted diorama aesthetic, soft studio lighting, pastel construction paper colors, visible paper fiber texture, charming children's book pop-up feel, tactile dimensional depth, no text overlay, 4k resolution",
+      "image": "./assets/images/33-페이퍼-크래프트.png"
+    },
+    {
+      "id": 33,
+      "name": "고딕 다크 판타지",
+      "tag": "",
+      "prompt": "gothic dark fantasy style, ornate medieval architecture, dramatic candlelight, rich burgundy and obsidian tones, intricate baroque details, foggy haunted atmosphere, dark romanticism aesthetic, oil painted texture, dramatic shadows, mysterious moody ambiance, no text overlay, 4k resolution",
+      "image": "./assets/images/34-고딕-다크-판타지.png"
+    },
+    {
+      "id": 34,
+      "name": "빈티지 코믹 만화",
+      "tag": "",
+      "prompt": "1950s vintage comic style, halftone dot printing texture, faded newsprint paper, limited CMYK color palette, bold ink outlines, retro pulp magazine aesthetic, slight registration misalignment, nostalgic mid-century feel, no text overlay, 4k resolution",
+      "image": "./assets/images/35-빈티지-코믹-만화.png"
+    },
+    {
+      "id": 35,
+      "name": "레트로 SF 70년대",
+      "tag": "",
+      "prompt": "1970s retro sci-fi illustration style, airbrushed gradients, chrome metallic surfaces, bold sunset color palette, cosmic space atmosphere, vintage paperback book cover aesthetic, geometric futurism, soft glowing horizons, analog sci-fi mood, no text overlay, 4k resolution",
+      "image": "./assets/images/36-레트로-sf-70년대.png"
+    },
+    {
+      "id": 36,
+      "name": "로파이 어반 일러스트",
+      "tag": "",
+      "prompt": "lo-fi urban illustration style, cozy warm color palette, soft grain texture, dim lamp lighting, melancholic chill atmosphere, anime-inspired urban scenery, hazy bokeh background, lo-fi hip hop album cover aesthetic, nostalgic mood, no text overlay, 4k resolution",
+      "image": "./assets/images/37-로파이-어반-일러스트.png"
+    },
+    {
+      "id": 37,
+      "name": "카툰 네트워크",
+      "tag": "",
+      "prompt": "modern Cartoon Network animation style, bold flat colors, quirky exaggerated character proportions, thick clean outlines, simple geometric shapes, playful expressive faces, vibrant TV cartoon aesthetic, smooth Flash animation feel, no text overlay, 4k resolution",
+      "image": "./assets/images/38-카툰-네트워크.png"
+    },
+    {
+      "id": 38,
+      "name": "흑백 망가 스타일",
+      "tag": "",
+      "prompt": "black and white manga style, screentone shading patterns, sharp ink linework, dramatic speed lines, dynamic panel composition, monochrome high contrast, classic shonen manga aesthetic, expressive character emotions, no text overlay, 4k resolution",
+      "image": "./assets/images/39-흑백-망가-스타일.png"
+    },
+    {
+      "id": 39,
+      "name": "미니멀 스칸디나비아",
+      "tag": "",
+      "prompt": "minimalist Scandinavian design style, clean simple shapes, muted earthy tones, soft beige and sage palette, hygge cozy atmosphere, plenty of white space, refined Nordic aesthetic, modern flat illustration, no text overlay, 4k resolution",
+      "image": "./assets/images/40-미니멀-스칸디나비아.png"
+    },
+    {
+      "id": 40,
+      "name": "어린이 크레용",
+      "tag": "",
+      "prompt": "childlike crayon drawing style, consistent character design, same simple cartoon character across scenes, hand-drawn with colored pencils, rough uneven outlines, vibrant scribble coloring, cute big eyes and expressive face, drawn on lined notebook paper, playful doodles in background, naive children's illustration style, slightly imperfect proportions, no text, no watermark, full frame",
+      "image": "./assets/images/41-어린이-크레용.png"
+    },
+    {
+      "id": 41,
+      "name": "마인크래3d",
+      "tag": "",
+      "prompt": "voxel art style, minecraft style 3D character, blocky cube geometry, cute proportions, big expressive eyes, soft global illumination, detailed voxel rendering, vibrant colors, smooth lighting, cinematic depth of field, fantasy environment made of cubes, high quality 3D render, no text, no watermark, full frame",
+      "image": "./assets/images/42-마인크래3d.png"
+    },
+    {
+      "id": 42,
+      "name": "유화",
+      "tag": "",
+      "prompt": "impressionist oil painting style, soft brush strokes, visible paint texture, warm natural lighting, dreamy atmosphere, slightly blurred details, vibrant yet soft color palette, light and shadow interplay, painterly composition, artistic and elegant mood, classic European painting style, no text, no watermark, full frame",
+      "image": "./assets/images/43-유화.png"
+    },
+    {
+      "id": 43,
+      "name": "스티커 텍스처",
+      "tag": "",
+      "prompt": "sticker style illustration, cute character as a sticker, thick white outline around the character, cutout style, soft hand-drawn look, slightly textured coloring (colored pencil or pastel feel), simple and clean composition, playful and friendly vibe, isolated object, subtle drop shadow, looks like a printed sticker placed on background, smooth edges, no text, no watermark, full frame",
+      "image": "./assets/images/44-스티커-텍스처.png"
+    },
+    {
+      "id": 44,
+      "name": "리얼 피규어",
+      "tag": "",
+      "prompt": "리얼 피규어 realistic action figure style, human character rendered as a lifelike collectible figure, smooth plastic-like skin texture, slightly artificial proportions, highly detailed clothing and materials, studio lighting, clean background, sharp focus, realistic but subtly toy-like appearance, high detail, no text, no watermark, full frame",
+      "image": "./assets/images/45-리얼-피규어.png"
+    },
+    {
+      "id": 45,
+      "name": "한국 2d 애니",
+      "tag": "",
+      "prompt": "Korean animation style, 2D cel animation, clean bold outlines, flat color shading, minimal gradients, smooth and simplified textures, hand-drawn look, slightly stylized human proportions, clear character readability, cinematic composition, medium shot or close-up framing, stable perspective, soft natural lighting, vivid but balanced color palette, calm background tones, traditional and modern environments both compatible, no exaggerated emotion, neutral facial expression by default, no tears, no distortion, no realism, no 3D, no noise, no grain, no text, no watermark, full-bleed",
+      "image": "./assets/images/46-한국-2d-애니.png"
+    },
+    {
+      "id": 46,
+      "name": "우키요에 일본",
+      "tag": "",
+      "prompt": "Ukiyo-e style, traditional Japanese woodblock print aesthetic, bold black outlines, flat color blocks, minimal shading, no gradients, decorative patterns, stylized composition, balanced negative space, hand-crafted texture, slightly rough ink lines, vintage print feel, no realism, no 3D, no modern rendering, no noise, no grain, no text, no watermark, full-bleed",
+      "image": "./assets/images/47-우키요에-일본.png"
+    }
+  ]
+}

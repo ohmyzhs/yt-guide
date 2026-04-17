@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tube Factory 영상 스타일 갤러리</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="page-header">
+    <div class="header-copy">
+      <p class="eyebrow">YT Guide</p>
+      <h1 id="page-title">Tube Factory 영상 스타일 갤러리</h1>
+      <p id="page-subtitle">로딩 중...</p>
+    </div>
+    <div class="viewer-toolbar" role="group" aria-label="이미지 뷰어 모드 선택">
+      <span class="viewer-label">클릭 시 열기</span>
+      <button class="viewer-btn active" id="viewer-detail-btn" type="button">카드형 상세</button>
+      <button class="viewer-btn" id="viewer-fullscreen-btn" type="button">풀뷰 캐러셀</button>
+    </div>
+  </header>
+
+  <main class="grid-container" id="gallery"></main>
+
+  <div class="lightbox-overlay" id="lightbox">
+    <button class="lb-close" id="lb-close" type="button" aria-label="닫기">✕</button>
+    <button class="lb-nav" id="lb-prev" type="button" aria-label="이전 이미지">‹</button>
+    <button class="lb-nav" id="lb-next" type="button" aria-label="다음 이미지">›</button>
+    <div class="lightbox-inner" id="lightbox-inner"></div>
+  </div>
+
+  <div class="toast" id="toast">✓ 클립보드에 복사되었습니다!</div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
