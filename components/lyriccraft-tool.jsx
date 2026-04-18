@@ -1,6 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  MUSIC_WORKSPACE_KEYS,
+  clearLyricCraftDraft,
+  saveLyricCraftDraft,
+  usePersistedJsonState,
+} from "@/lib/music-workspace";
 
 const GENRES = [
   "기독교/가스펠", "뉴에이지", "댄스", "독일팝", "독일포크", "동요",
@@ -29,6 +35,7 @@ const STRUCTURES = [
 ];
 
 const initialConfig = {
+  title: "",
   genre: "팝",
   subGenre: ELECTRONIC_SUBGENRES[0],
   language: LANGUAGES[0],
@@ -40,13 +47,27 @@ const initialConfig = {
   motive: "",
 };
 
+function FieldLabel({ children, accent = false }) {
+  return <span className={`text-sm font-bold ${accent ? "text-indigo-700" : "text-slate-700"}`}>{children}</span>;
+}
+
 export function LyricCraftTool() {
-  const [config, setConfig] = useState(initialConfig);
-  const [lyrics, setLyrics] = useState("");
+  const [config, setConfig] = usePersistedJsonState(MUSIC_WORKSPACE_KEYS.lyricCraftForm, initialConfig);
+  const [lyrics, setLyrics] = usePersistedJsonState(MUSIC_WORKSPACE_KEYS.lyricCraftOutput, "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const isElectronic = useMemo(() => config.genre.includes("일렉트로닉"), [config.genre]);
+
+  useEffect(() => {
+    saveLyricCraftDraft({
+      title: config.title,
+      genre: config.genre,
+      electronicSub: config.subGenre,
+      mood: config.mood,
+      lyrics,
+    });
+  }, [config.title, config.genre, config.subGenre, config.mood, lyrics]);
 
   async function handleGenerate() {
     if (!config.motive.trim()) {
@@ -65,13 +86,14 @@ export function LyricCraftTool() {
 
     const userQuery = `
 다음 조건에 맞는 노래 가사를 작성해줘:
-1. 장르: ${config.genre} ${isElectronic ? `(서브장르: ${config.subGenre})` : ""}
-2. 전체 가사 언어: ${config.language}
-3. 코러스(Chorus) 전용 언어: ${config.chorusLanguage}
-4. 분위기: ${config.mood}
-5. 가사 구성: ${config.structure}
-6. 곡 정보: BPM ${config.bpm}, 예상 길이 ${config.duration}
-7. 가사 모티브: ${config.motive}
+1. 곡 제목: ${config.title || "미정"}
+2. 장르: ${config.genre} ${isElectronic ? `(서브장르: ${config.subGenre})` : ""}
+3. 전체 가사 언어: ${config.language}
+4. 코러스(Chorus) 전용 언어: ${config.chorusLanguage}
+5. 분위기: ${config.mood}
+6. 가사 구성: ${config.structure}
+7. 곡 정보: BPM ${config.bpm}, 예상 길이 ${config.duration}
+8. 가사 모티브: ${config.motive}
 
 각 섹션([Intro], [Verse 1], [Chorus] 등)을 명확히 구분하고, 모티브가 자연스럽게 녹아나게 해줘.`;
 
@@ -112,83 +134,107 @@ export function LyricCraftTool() {
     window.alert("가사가 클립보드에 복사되었습니다.");
   }
 
+  function resetWorkspace() {
+    setConfig(initialConfig);
+    setLyrics("");
+    setError("");
+    clearLyricCraftDraft();
+  }
+
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(340px,460px)_minmax(0,1fr)]">
+    <div className="grid gap-6 2xl:grid-cols-[minmax(340px,460px)_minmax(0,1fr)]">
       <section className="rounded-[2rem] border border-black/8 bg-[var(--surface)] p-6 shadow-[var(--shadow-lg)]">
         <div className="mb-6">
           <p className="text-xs font-black uppercase tracking-[0.24em] text-[var(--accent)]">Music Production</p>
-          <h1 className="mt-2 text-3xl font-black tracking-[-0.05em] text-slate-900">자막 제작</h1>
-          <p className="mt-3 text-sm leading-7 text-slate-600">LyricCraft AI를 React 페이지로 이식한 가사 생성기입니다. 모티브와 장르를 입력하면 곡 구조에 맞춘 가사를 만듭니다.</p>
+          <h1 className="mt-2 text-3xl font-black tracking-[-0.05em] text-slate-900">가사 만들기</h1>
+          <p className="mt-3 text-sm leading-7 text-slate-600">
+            LyricCraft AI를 React 페이지로 이식한 가사 생성기입니다. 페이지를 이동해도 입력값과 결과를 유지하며, 필요할 때만 초기화할 수 있습니다.
+          </p>
         </div>
 
         <div className="grid gap-4">
-          <label className="grid gap-2">
-            <span className="text-sm font-bold text-slate-700">장르 선택</span>
-            <select className="rounded-2xl border border-black/8 bg-white px-4 py-3" value={config.genre} onChange={(event) => setConfig((prev) => ({ ...prev, genre: event.target.value }))}>
+          <label className="grid min-w-0 gap-2">
+            <FieldLabel>곡 제목</FieldLabel>
+            <input
+              type="text"
+              value={config.title}
+              onChange={(event) => setConfig((prev) => ({ ...prev, title: event.target.value }))}
+              className="w-full min-w-0 rounded-2xl border border-black/8 bg-white px-4 py-3"
+              placeholder="예: Midnight Rain Coffee"
+            />
+          </label>
+
+          <label className="grid min-w-0 gap-2">
+            <FieldLabel>장르 선택</FieldLabel>
+            <select className="w-full min-w-0 rounded-2xl border border-black/8 bg-white px-4 py-3" value={config.genre} onChange={(event) => setConfig((prev) => ({ ...prev, genre: event.target.value }))}>
               {GENRES.map((genre) => <option key={genre} value={genre}>{genre}</option>)}
             </select>
           </label>
 
           {isElectronic ? (
-            <label className="grid gap-2">
-              <span className="text-sm font-bold text-slate-700">일렉트로닉 세부 장르</span>
-              <select className="rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3" value={config.subGenre} onChange={(event) => setConfig((prev) => ({ ...prev, subGenre: event.target.value }))}>
+            <label className="grid min-w-0 gap-2">
+              <FieldLabel>일렉트로닉 세부 장르</FieldLabel>
+              <select className="w-full min-w-0 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3" value={config.subGenre} onChange={(event) => setConfig((prev) => ({ ...prev, subGenre: event.target.value }))}>
                 {ELECTRONIC_SUBGENRES.map((subGenre) => <option key={subGenre} value={subGenre}>{subGenre}</option>)}
               </select>
             </label>
           ) : null}
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <label className="grid gap-2">
-              <span className="text-sm font-bold text-slate-700">가사 언어</span>
-              <select className="rounded-2xl border border-black/8 bg-white px-4 py-3" value={config.language} onChange={(event) => setConfig((prev) => ({ ...prev, language: event.target.value }))}>
+            <label className="grid min-w-0 gap-2">
+              <FieldLabel>가사 언어</FieldLabel>
+              <select className="w-full min-w-0 rounded-2xl border border-black/8 bg-white px-4 py-3" value={config.language} onChange={(event) => setConfig((prev) => ({ ...prev, language: event.target.value }))}>
                 {LANGUAGES.map((language) => <option key={language} value={language}>{language}</option>)}
               </select>
             </label>
-            <label className="grid gap-2">
-              <span className="text-sm font-bold text-indigo-700">코러스 언어</span>
-              <select className="rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3" value={config.chorusLanguage} onChange={(event) => setConfig((prev) => ({ ...prev, chorusLanguage: event.target.value }))}>
+            <label className="grid min-w-0 gap-2">
+              <FieldLabel accent>코러스 언어</FieldLabel>
+              <select className="w-full min-w-0 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3" value={config.chorusLanguage} onChange={(event) => setConfig((prev) => ({ ...prev, chorusLanguage: event.target.value }))}>
                 {LANGUAGES.map((language) => <option key={language} value={language}>{language}</option>)}
               </select>
             </label>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <label className="grid gap-2">
-              <span className="text-sm font-bold text-slate-700">분위기</span>
-              <select className="rounded-2xl border border-black/8 bg-white px-4 py-3" value={config.mood} onChange={(event) => setConfig((prev) => ({ ...prev, mood: event.target.value }))}>
+            <label className="grid min-w-0 gap-2">
+              <FieldLabel>분위기</FieldLabel>
+              <select className="w-full min-w-0 rounded-2xl border border-black/8 bg-white px-4 py-3" value={config.mood} onChange={(event) => setConfig((prev) => ({ ...prev, mood: event.target.value }))}>
                 {MOODS.map((mood) => <option key={mood} value={mood}>{mood}</option>)}
               </select>
             </label>
-            <label className="grid gap-2">
-              <span className="text-sm font-bold text-slate-700">곡 구성</span>
-              <select className="rounded-2xl border border-black/8 bg-white px-4 py-3" value={config.structure} onChange={(event) => setConfig((prev) => ({ ...prev, structure: event.target.value }))}>
-                {STRUCTURES.map((structure) => <option key={structure} value={structure}>{structure}</option>)}
-              </select>
+            <label className="grid min-w-0 gap-2">
+              <FieldLabel>곡 길이</FieldLabel>
+              <input type="text" value={config.duration} onChange={(event) => setConfig((prev) => ({ ...prev, duration: event.target.value }))} className="w-full min-w-0 rounded-2xl border border-black/8 bg-white px-4 py-3" />
             </label>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="grid gap-2">
-              <span className="text-sm font-bold text-slate-700">BPM ({config.bpm})</span>
-              <input type="range" min="60" max="200" step="1" value={config.bpm} onChange={(event) => setConfig((prev) => ({ ...prev, bpm: Number(event.target.value) }))} className="accent-[var(--accent)]" />
-            </label>
-            <label className="grid gap-2">
-              <span className="text-sm font-bold text-slate-700">곡 길이</span>
-              <input type="text" value={config.duration} onChange={(event) => setConfig((prev) => ({ ...prev, duration: event.target.value }))} className="rounded-2xl border border-black/8 bg-white px-4 py-3" />
-            </label>
-          </div>
+          <label className="grid min-w-0 gap-2">
+            <FieldLabel>곡 구성</FieldLabel>
+            <select className="w-full min-w-0 rounded-2xl border border-black/8 bg-white px-4 py-3 text-sm" value={config.structure} onChange={(event) => setConfig((prev) => ({ ...prev, structure: event.target.value }))}>
+              {STRUCTURES.map((structure) => <option key={structure} value={structure}>{structure}</option>)}
+            </select>
+          </label>
 
-          <label className="grid gap-2">
-            <span className="text-sm font-bold text-slate-700">가사 모티브</span>
-            <textarea rows={6} value={config.motive} onChange={(event) => setConfig((prev) => ({ ...prev, motive: event.target.value }))} className="rounded-[1.5rem] border border-black/8 bg-white px-4 py-4 text-sm leading-7" placeholder="영화 장면, 감정, 스토리 모티브를 입력하세요." />
+          <label className="grid min-w-0 gap-2">
+            <FieldLabel>BPM ({config.bpm})</FieldLabel>
+            <input type="range" min="60" max="200" step="1" value={config.bpm} onChange={(event) => setConfig((prev) => ({ ...prev, bpm: Number(event.target.value) }))} className="accent-[var(--accent)]" />
+          </label>
+
+          <label className="grid min-w-0 gap-2">
+            <FieldLabel>가사 모티브</FieldLabel>
+            <textarea rows={6} value={config.motive} onChange={(event) => setConfig((prev) => ({ ...prev, motive: event.target.value }))} className="w-full min-w-0 rounded-[1.5rem] border border-black/8 bg-white px-4 py-4 text-sm leading-7" placeholder="영화 장면, 감정, 스토리 모티브를 입력하세요." />
           </label>
 
           <p className="min-h-5 text-xs font-bold text-rose-500">{error}</p>
 
-          <button type="button" onClick={handleGenerate} disabled={loading} className="rounded-[1.25rem] bg-indigo-600 px-5 py-4 text-sm font-black text-white transition hover:bg-indigo-500 disabled:opacity-60">
-            {loading ? "가사 생성 중..." : "가사 생성하기"}
-          </button>
+          <div className="flex flex-wrap gap-3">
+            <button type="button" onClick={handleGenerate} disabled={loading} className="rounded-[1.25rem] bg-indigo-600 px-5 py-4 text-sm font-black text-white transition hover:bg-indigo-500 disabled:opacity-60">
+              {loading ? "가사 생성 중..." : "가사 생성하기"}
+            </button>
+            <button type="button" onClick={resetWorkspace} className="rounded-[1.25rem] border border-black/8 bg-white px-5 py-4 text-sm font-black text-slate-600 transition hover:bg-slate-50">
+              초기화
+            </button>
+          </div>
         </div>
       </section>
 
@@ -198,10 +244,7 @@ export function LyricCraftTool() {
             <p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-400">Generated Lyrics</p>
             <p className="mt-1 text-sm text-white/45">LyricCraft AI output</p>
           </div>
-          <div className="flex gap-2">
-            <button type="button" onClick={() => { setLyrics(""); setConfig((prev) => ({ ...prev, motive: "" })); }} className="rounded-xl border border-white/10 bg-white/6 px-3 py-2 text-xs font-bold text-white/70">초기화</button>
-            <button type="button" onClick={copyToClipboard} disabled={!lyrics} className="rounded-xl border border-white/10 bg-white/6 px-3 py-2 text-xs font-bold text-white/70 disabled:opacity-40">복사</button>
-          </div>
+          <button type="button" onClick={copyToClipboard} disabled={!lyrics} className="rounded-xl border border-white/10 bg-white/6 px-3 py-2 text-xs font-bold text-white/70 disabled:opacity-40">복사</button>
         </div>
         <div className="app-scrollbar flex-1 overflow-auto bg-[radial-gradient(circle_at_top_right,#1e293b_0%,#0f172a_100%)] px-6 py-6 text-slate-200">
           {loading ? (
@@ -216,7 +259,7 @@ export function LyricCraftTool() {
               <div className="text-6xl opacity-20">♫</div>
               <div>
                 <h3 className="text-lg font-bold text-slate-300">가사 엔진 준비됨</h3>
-                <p className="mt-2 text-sm">왼쪽에서 설정을 마치고 생성 버튼을 누르세요.</p>
+                <p className="mt-2 text-sm">입력값은 페이지를 이동해도 유지됩니다. 필요하면 초기화 버튼으로만 지워주세요.</p>
               </div>
             </div>
           )}

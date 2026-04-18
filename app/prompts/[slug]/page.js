@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { ClientOnly } from "@/components/client-only";
 import { PromptDocument } from "@/components/prompt-document";
 import { SunoPromptWorkbench } from "@/components/suno-prompt-workbench";
 import { getAllPromptSlugs, getPromptPageBySlug } from "@/lib/site-content";
@@ -16,7 +17,11 @@ export default async function PromptPage({ params }) {
   }
 
   if (slug === "suno-prompt") {
-    return <SunoPromptWorkbench {...promptPage} />;
+    return (
+      <ClientOnly>
+        <SunoPromptWorkbench {...promptPage} />
+      </ClientOnly>
+    );
   }
 
   return <PromptDocument {...promptPage} />;

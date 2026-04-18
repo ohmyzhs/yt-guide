@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { MUSIC_WORKSPACE_KEYS, usePersistedJsonState } from "@/lib/music-workspace";
 
 function CopyButton({ label, value, disabled = false, fullWidth = false, tone = "accent" }) {
   const [copied, setCopied] = useState(false);
@@ -45,8 +46,8 @@ function getGeneratedText(result) {
 }
 
 export function SunoPromptWorkbench({ title, description, tags, content, sectionLabel }) {
-  const [userInput, setUserInput] = useState("");
-  const [generatedPrompt, setGeneratedPrompt] = useState("");
+  const [userInput, setUserInput] = usePersistedJsonState(MUSIC_WORKSPACE_KEYS.sunoInput, "");
+  const [generatedPrompt, setGeneratedPrompt] = usePersistedJsonState(MUSIC_WORKSPACE_KEYS.sunoOutput, "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const rules = useMemo(() => getGenerationRules(content), [content]);
@@ -96,7 +97,7 @@ export function SunoPromptWorkbench({ title, description, tags, content, section
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
+    <div className="grid gap-6 2xl:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
       <aside className="rounded-[2rem] border border-black/8 bg-[var(--surface)] p-6 shadow-[var(--shadow-lg)]">
         <p className="text-xs font-black uppercase tracking-[0.24em] text-[var(--accent)]">{sectionLabel}</p>
         <h1 className="mt-3 text-3xl font-black tracking-[-0.05em] text-slate-900">{title}</h1>

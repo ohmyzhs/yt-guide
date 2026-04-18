@@ -1,6 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import {
+  MUSIC_WORKSPACE_KEYS,
+  readLyricCraftDraft,
+  usePersistedJsonState,
+} from "@/lib/music-workspace";
 
 const GENRES = [
   "기독교/가스펠", "뉴에이지", "댄스", "독일팝", "독일포크", "동요", "라틴", "레게", "록", "보컬", "블루스",
@@ -110,16 +115,16 @@ function OutputPanel({ panelKey, panel, activeTab, onSwitchTab }) {
 }
 
 export function LyricVisualizerTool() {
-  const [form, setForm] = useState(initialState);
+  const [form, setForm] = usePersistedJsonState(MUSIC_WORKSPACE_KEYS.lyricVisualizerForm, initialState);
+  const [results, setResults] = usePersistedJsonState(MUSIC_WORKSPACE_KEYS.lyricVisualizerResults, []);
+  const [activeTabs, setActiveTabs] = usePersistedJsonState(MUSIC_WORKSPACE_KEYS.lyricVisualizerTabs, {});
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState([]);
-  const [activeTabs, setActiveTabs] = useState({});
   const fullGenre = useMemo(() => form.genre === "일렉트로닉" ? `${form.genre} (${form.electronicSub})` : form.genre, [form.genre, form.electronicSub]);
 
   function buildSystemPrompt(mode) {
     if (mode === "en") {
       return `You are a world-class cinematic prompt engineer for high-end AI music video production (Midjourney + Luma/Runway).
-Analyze the lyrics and all settings carefully. Create a rich, emotionally coherent storyboard with **exactly 40 scenes**.
+Analyze the lyrics and all settings carefully. Create a rich, emotionally coherent storyboard with exactly 40 scenes.
 
 PROJECT CONTEXT:
 - Song Title: ${form.songTitle || "No Title"}
@@ -131,12 +136,10 @@ PROJECT CONTEXT:
 ${form.char2_age === "None" ? "- Main Character 2: 없음 (단 한 명의 주인공만 등장)" : `- Main Character 2: Age: ${form.char2_age}, Race: ${form.char2_race}, Gender: ${form.char2_gender}`}
 
 CRITICAL REQUIREMENTS:
-1. Generate **exactly 40** logical, sequential scenes following the lyrical narrative flow.
-2. Each **scene_name** must be written in **Korean** and be descriptive.
-3. **All "prompt" fields (both image_prompts and video_prompts) must be written entirely in natural, highly detailed English.**
-   - Never output any Korean text inside the prompt except for scene_name.
-   - Structure each prompt as: Selected Visual Style + who + when + where + what + how + why + additional cinematic details.
-4. Maintain the exact selected visual style strongly without overwriting it with generic cinematic terms.
+1. Generate exactly 40 logical, sequential scenes following the lyrical narrative flow.
+2. Each scene_name must be written in Korean and be descriptive.
+3. All prompt fields (both image_prompts and video_prompts) must be written entirely in natural, highly detailed English.
+4. Maintain the selected visual style strongly without overwriting it with generic cinematic terms.
 5. If Main Character 2 is "없음", never include Character 2 in any scene.
 
 OUTPUT FORMAT (Strict JSON only, no extra text):
@@ -147,7 +150,7 @@ OUTPUT FORMAT (Strict JSON only, no extra text):
     }
 
     return `You are a world-class cinematic prompt engineer for high-end AI music video production (Midjourney + Luma/Runway).
-Analyze the lyrics and all settings carefully. Create a rich, emotionally coherent storyboard with **exactly 40 scenes**.
+Analyze the lyrics and all settings carefully. Create a rich, emotionally coherent storyboard with exactly 40 scenes.
 
 PROJECT CONTEXT:
 - Song Title: ${form.songTitle || "No Title"}
@@ -159,8 +162,8 @@ PROJECT CONTEXT:
 ${form.char2_age === "None" ? "- Main Character 2: 없음 (단 한 명의 주인공만 등장)" : `- Main Character 2: Age: ${form.char2_age}, Race: ${form.char2_race}, Gender: ${form.char2_gender}`}
 
 CRITICAL REQUIREMENTS:
-1. Generate **exactly 40** logical, sequential scenes following the lyrical narrative.
-2. Each scene_name must be in **Korean** and descriptive.
+1. Generate exactly 40 logical, sequential scenes following the lyrical narrative.
+2. Each scene_name must be in Korean and descriptive.
 3. 프롬프트는 반드시 다음 순서로 구성: 선택된 Visual Style + 누가 + 언제 + 어디서 + 무엇을 + 어떻게 + 왜 + 기타 세부 명령
 4. Main Character 2가 "없음"인 경우, 모든 장면에서 Main Character 2를 절대 등장시키지 말 것. 오직 Main Character 1만으로 스토리를 구성.
 
@@ -238,107 +241,139 @@ OUTPUT FORMAT (Strict JSON only):
     }
   }
 
+  function importFromLyricsMaker() {
+    const draft = readLyricCraftDraft();
+    if (!draft?.lyrics?.trim()) {
+      window.alert("가사 만들기 메뉴에서 제목과 가사를 먼저 준비해주세요.");
+      return;
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      songTitle: draft.title || prev.songTitle,
+      genre: draft.genre || prev.genre,
+      electronicSub: draft.electronicSub || prev.electronicSub,
+      mood: draft.mood || prev.mood,
+      lyrics: draft.lyrics || prev.lyrics,
+    }));
+  }
+
+  function resetWorkspace() {
+    setForm(initialState);
+    setResults([]);
+    setActiveTabs({});
+  }
+
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(340px,460px)_minmax(0,1fr)]">
+    <div className="space-y-6">
       <section className="rounded-[2rem] border border-black/8 bg-[var(--surface)] p-6 shadow-[var(--shadow-lg)]">
-        <div className="mb-6">
-          <p className="text-xs font-black uppercase tracking-[0.24em] text-[var(--accent)]">Music Production</p>
-          <h1 className="mt-2 text-3xl font-black tracking-[-0.05em] text-slate-900">뮤비이미지/영상 제작</h1>
-          <p className="mt-3 text-sm leading-7 text-slate-600">LyricVisualizer Pro의 한글/영문 프롬프트 출력을 하나의 페이지에서 통합해 제어할 수 있게 재구성했습니다.</p>
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.24em] text-[var(--accent)]">Music Production</p>
+            <h1 className="mt-2 text-3xl font-black tracking-[-0.05em] text-slate-900">뮤비이미지/영상 제작</h1>
+            <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-600">
+              곡 정보 설정을 상단에서 마치고, 하단에서 생성 결과를 보는 상하 분할 구조로 재구성했습니다. 가사 만들기 메뉴에 저장된 제목과 가사를 바로 가져올 수 있습니다.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <button type="button" onClick={importFromLyricsMaker} className="rounded-2xl border border-black/8 bg-white px-4 py-3 text-sm font-bold text-slate-600 transition hover:bg-slate-50">
+              가사 만들기에서 가져오기
+            </button>
+            <button type="button" onClick={resetWorkspace} className="rounded-2xl border border-black/8 bg-white px-4 py-3 text-sm font-bold text-slate-600 transition hover:bg-slate-50">
+              초기화
+            </button>
+            <button type="button" onClick={generate} disabled={loading} className="rounded-2xl bg-sky-600 px-5 py-3 text-sm font-black text-white transition hover:bg-sky-500 disabled:opacity-60">
+              {loading ? "프롬프트 생성 중..." : "프롬프트 40장면 생성"}
+            </button>
+          </div>
         </div>
 
-        <div className="grid gap-4">
-          <label className="grid gap-2">
-            <span className="text-sm font-bold text-slate-700">곡 정보</span>
-            <input className="rounded-2xl border border-black/8 bg-white px-4 py-3" placeholder="제목 - 아티스트" value={form.songTitle} onChange={(event) => setForm((prev) => ({ ...prev, songTitle: event.target.value }))} />
-          </label>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="grid gap-2">
-              <span className="text-sm font-bold text-slate-700">장르</span>
-              <select className="rounded-2xl border border-black/8 bg-white px-4 py-3" value={form.genre} onChange={(event) => setForm((prev) => ({ ...prev, genre: event.target.value }))}>
-                {GENRES.map((genre) => <option key={genre} value={genre}>{genre}</option>)}
-              </select>
-            </label>
-            {form.genre === "일렉트로닉" ? (
-              <label className="grid gap-2">
-                <span className="text-sm font-bold text-slate-700">일렉트로닉 서브장르</span>
-                <select className="rounded-2xl border border-black/8 bg-white px-4 py-3" value={form.electronicSub} onChange={(event) => setForm((prev) => ({ ...prev, electronicSub: event.target.value }))}>
-                  {ELECTRONIC_SUBGENRES.map((genre) => <option key={genre} value={genre}>{genre}</option>)}
-                </select>
-              </label>
-            ) : null}
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="grid gap-2">
-              <span className="text-sm font-bold text-slate-700">분위기</span>
-              <select className="rounded-2xl border border-black/8 bg-white px-4 py-3" value={form.mood} onChange={(event) => setForm((prev) => ({ ...prev, mood: event.target.value }))}>
-                {MOODS.map((mood) => <option key={mood} value={mood}>{mood}</option>)}
-              </select>
-            </label>
-            <label className="grid gap-2">
-              <span className="text-sm font-bold text-slate-700">배경 시대</span>
-              <select className="rounded-2xl border border-black/8 bg-white px-4 py-3" value={form.timeline} onChange={(event) => setForm((prev) => ({ ...prev, timeline: event.target.value }))}>
-                {TIMELINES.map((timeline) => <option key={timeline} value={timeline}>{timeline}</option>)}
-              </select>
-            </label>
-          </div>
-
-          <label className="grid gap-2">
-            <span className="text-sm font-bold text-slate-700">이미지 & 영상 스타일</span>
-            <select className="rounded-2xl border border-black/8 bg-white px-4 py-3" value={form.visualStyle} onChange={(event) => setForm((prev) => ({ ...prev, visualStyle: event.target.value }))}>
-              {VISUAL_STYLES.map((style) => <option key={style} value={style}>{style}</option>)}
-            </select>
+        <div className="mt-6 grid gap-4 xl:grid-cols-2">
+          <label className="grid min-w-0 gap-2">
+            <span className="text-sm font-bold text-slate-700">곡 정보 (제목)</span>
+            <input className="w-full min-w-0 rounded-2xl border border-black/8 bg-white px-4 py-3" placeholder="곡 제목" value={form.songTitle} onChange={(event) => setForm((prev) => ({ ...prev, songTitle: event.target.value }))} />
           </label>
 
-          <label className="grid gap-2">
+          <label className="grid min-w-0 gap-2">
             <span className="text-sm font-bold text-slate-700">출력 모드</span>
-            <select className="rounded-2xl border border-black/8 bg-white px-4 py-3" value={form.outputMode} onChange={(event) => setForm((prev) => ({ ...prev, outputMode: event.target.value }))}>
+            <select className="w-full min-w-0 rounded-2xl border border-black/8 bg-white px-4 py-3" value={form.outputMode} onChange={(event) => setForm((prev) => ({ ...prev, outputMode: event.target.value }))}>
               <option value="ko">한글 프롬프트 출력</option>
               <option value="en">영어 프롬프트 출력</option>
               <option value="both">한글 + 영어 둘 다 출력</option>
             </select>
           </label>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="grid gap-2">
-              <span className="text-sm font-bold text-slate-700">Main Character 1</span>
-              <div className="grid grid-cols-3 gap-2">
-                <select className="rounded-2xl border border-black/8 bg-white px-3 py-3 text-sm" value={form.char1_age} onChange={(event) => setForm((prev) => ({ ...prev, char1_age: event.target.value }))}>
-                  {["Child", "Teenager", "20s", "30s", "Middle-aged"].map((value) => <option key={value} value={value}>{value}</option>)}
-                </select>
-                <select className="rounded-2xl border border-black/8 bg-white px-3 py-3 text-sm" value={form.char1_race} onChange={(event) => setForm((prev) => ({ ...prev, char1_race: event.target.value }))}>
-                  {["Korean", "Western"].map((value) => <option key={value} value={value}>{value}</option>)}
-                </select>
-                <select className="rounded-2xl border border-black/8 bg-white px-3 py-3 text-sm" value={form.char1_gender} onChange={(event) => setForm((prev) => ({ ...prev, char1_gender: event.target.value }))}>
-                  {["Male", "Female"].map((value) => <option key={value} value={value}>{value}</option>)}
-                </select>
-              </div>
-            </label>
-            <label className="grid gap-2">
-              <span className="text-sm font-bold text-slate-700">Main Character 2</span>
-              <div className="grid grid-cols-3 gap-2">
-                <select className="rounded-2xl border border-black/8 bg-white px-3 py-3 text-sm" value={form.char2_age} onChange={(event) => setForm((prev) => ({ ...prev, char2_age: event.target.value }))}>
-                  {["None", "Child", "Teenager", "20s", "30s", "Middle-aged"].map((value) => <option key={value} value={value}>{value}</option>)}
-                </select>
-                <select disabled={form.char2_age === "None"} className="rounded-2xl border border-black/8 bg-white px-3 py-3 text-sm disabled:opacity-50" value={form.char2_race} onChange={(event) => setForm((prev) => ({ ...prev, char2_race: event.target.value }))}>
-                  {["Korean", "Western"].map((value) => <option key={value} value={value}>{value}</option>)}
-                </select>
-                <select disabled={form.char2_age === "None"} className="rounded-2xl border border-black/8 bg-white px-3 py-3 text-sm disabled:opacity-50" value={form.char2_gender} onChange={(event) => setForm((prev) => ({ ...prev, char2_gender: event.target.value }))}>
-                  {["Male", "Female"].map((value) => <option key={value} value={value}>{value}</option>)}
-                </select>
-              </div>
-            </label>
-          </div>
-
-          <label className="grid gap-2">
-            <span className="text-sm font-bold text-slate-700">Lyrics</span>
-            <textarea rows={8} className="rounded-[1.5rem] border border-black/8 bg-white px-4 py-4 text-sm leading-7" placeholder="가사를 입력하세요..." value={form.lyrics} onChange={(event) => setForm((prev) => ({ ...prev, lyrics: event.target.value }))} />
+          <label className="grid min-w-0 gap-2">
+            <span className="text-sm font-bold text-slate-700">장르</span>
+            <select className="w-full min-w-0 rounded-2xl border border-black/8 bg-white px-4 py-3" value={form.genre} onChange={(event) => setForm((prev) => ({ ...prev, genre: event.target.value }))}>
+              {GENRES.map((genre) => <option key={genre} value={genre}>{genre}</option>)}
+            </select>
           </label>
 
-          <button type="button" onClick={generate} disabled={loading} className="rounded-[1.25rem] bg-sky-600 px-5 py-4 text-sm font-black text-white transition hover:bg-sky-500 disabled:opacity-60">
-            {loading ? "프롬프트 생성 중..." : "프롬프트 40장면 생성"}
-          </button>
+          {form.genre === "일렉트로닉" ? (
+            <label className="grid min-w-0 gap-2">
+              <span className="text-sm font-bold text-slate-700">일렉트로닉 서브장르</span>
+              <select className="w-full min-w-0 rounded-2xl border border-black/8 bg-white px-4 py-3" value={form.electronicSub} onChange={(event) => setForm((prev) => ({ ...prev, electronicSub: event.target.value }))}>
+                {ELECTRONIC_SUBGENRES.map((genre) => <option key={genre} value={genre}>{genre}</option>)}
+              </select>
+            </label>
+          ) : null}
+
+          <label className="grid min-w-0 gap-2">
+            <span className="text-sm font-bold text-slate-700">분위기</span>
+            <select className="w-full min-w-0 rounded-2xl border border-black/8 bg-white px-4 py-3" value={form.mood} onChange={(event) => setForm((prev) => ({ ...prev, mood: event.target.value }))}>
+              {MOODS.map((mood) => <option key={mood} value={mood}>{mood}</option>)}
+            </select>
+          </label>
+
+          <label className="grid min-w-0 gap-2">
+            <span className="text-sm font-bold text-slate-700">배경 시대</span>
+            <select className="w-full min-w-0 rounded-2xl border border-black/8 bg-white px-4 py-3" value={form.timeline} onChange={(event) => setForm((prev) => ({ ...prev, timeline: event.target.value }))}>
+              {TIMELINES.map((timeline) => <option key={timeline} value={timeline}>{timeline}</option>)}
+            </select>
+          </label>
+
+          <label className="grid min-w-0 gap-2 xl:col-span-2">
+            <span className="text-sm font-bold text-slate-700">이미지 & 영상 스타일</span>
+            <select className="w-full min-w-0 rounded-2xl border border-black/8 bg-white px-4 py-3" value={form.visualStyle} onChange={(event) => setForm((prev) => ({ ...prev, visualStyle: event.target.value }))}>
+              {VISUAL_STYLES.map((style) => <option key={style} value={style}>{style}</option>)}
+            </select>
+          </label>
+
+          <label className="grid gap-2">
+            <span className="text-sm font-bold text-slate-700">Main Character 1</span>
+            <div className="grid grid-cols-3 gap-2">
+              <select className="rounded-2xl border border-black/8 bg-white px-3 py-3 text-sm" value={form.char1_age} onChange={(event) => setForm((prev) => ({ ...prev, char1_age: event.target.value }))}>
+                {["Child", "Teenager", "20s", "30s", "Middle-aged"].map((value) => <option key={value} value={value}>{value}</option>)}
+              </select>
+              <select className="rounded-2xl border border-black/8 bg-white px-3 py-3 text-sm" value={form.char1_race} onChange={(event) => setForm((prev) => ({ ...prev, char1_race: event.target.value }))}>
+                {["Korean", "Western"].map((value) => <option key={value} value={value}>{value}</option>)}
+              </select>
+              <select className="rounded-2xl border border-black/8 bg-white px-3 py-3 text-sm" value={form.char1_gender} onChange={(event) => setForm((prev) => ({ ...prev, char1_gender: event.target.value }))}>
+                {["Male", "Female"].map((value) => <option key={value} value={value}>{value}</option>)}
+              </select>
+            </div>
+          </label>
+
+          <label className="grid gap-2">
+            <span className="text-sm font-bold text-slate-700">Main Character 2</span>
+            <div className="grid grid-cols-3 gap-2">
+              <select className="rounded-2xl border border-black/8 bg-white px-3 py-3 text-sm" value={form.char2_age} onChange={(event) => setForm((prev) => ({ ...prev, char2_age: event.target.value }))}>
+                {["None", "Child", "Teenager", "20s", "30s", "Middle-aged"].map((value) => <option key={value} value={value}>{value}</option>)}
+              </select>
+              <select disabled={form.char2_age === "None"} className="rounded-2xl border border-black/8 bg-white px-3 py-3 text-sm disabled:opacity-50" value={form.char2_race} onChange={(event) => setForm((prev) => ({ ...prev, char2_race: event.target.value }))}>
+                {["Korean", "Western"].map((value) => <option key={value} value={value}>{value}</option>)}
+              </select>
+              <select disabled={form.char2_age === "None"} className="rounded-2xl border border-black/8 bg-white px-3 py-3 text-sm disabled:opacity-50" value={form.char2_gender} onChange={(event) => setForm((prev) => ({ ...prev, char2_gender: event.target.value }))}>
+                {["Male", "Female"].map((value) => <option key={value} value={value}>{value}</option>)}
+              </select>
+            </div>
+          </label>
+
+          <label className="grid min-w-0 gap-2 xl:col-span-2">
+            <span className="text-sm font-bold text-slate-700">Lyrics</span>
+            <textarea rows={8} className="w-full min-w-0 rounded-[1.5rem] border border-black/8 bg-white px-4 py-4 text-sm leading-7" placeholder="가사를 입력하세요..." value={form.lyrics} onChange={(event) => setForm((prev) => ({ ...prev, lyrics: event.target.value }))} />
+          </label>
         </div>
       </section>
 
@@ -367,7 +402,7 @@ OUTPUT FORMAT (Strict JSON only):
           <div className="flex min-h-[560px] flex-col items-center justify-center rounded-[2rem] border border-dashed border-slate-700 bg-slate-950/72 p-12 text-center shadow-[0_28px_70px_rgba(2,6,23,0.28)]">
             <div className="text-5xl text-slate-700">▣</div>
             <h3 className="mt-5 text-xl font-bold text-slate-300">데이터 입력 대기 중</h3>
-            <p className="mt-3 max-w-md text-sm leading-7 text-slate-500">왼쪽에서 곡 정보와 스타일, 주인공 설정을 입력한 뒤 생성 버튼을 누르면 이미지/영상 프롬프트가 여기 렌더링됩니다.</p>
+            <p className="mt-3 max-w-md text-sm leading-7 text-slate-500">상단에서 곡 정보와 스타일, 주인공 설정을 입력한 뒤 생성 버튼을 누르면 이미지/영상 프롬프트가 여기 렌더링됩니다.</p>
           </div>
         )}
       </section>
