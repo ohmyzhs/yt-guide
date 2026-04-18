@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LyricCraft AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900 font-sans p-4 md:p-8">
+
+<div class="max-w-5xl mx-auto">
+  <header class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-black text-indigo-600 flex items-center gap-2">
+        <i class="fa-solid fa-music text-3xl"></i> LyricCraft AI
+      </h1>
+      <p class="text-slate-500">당신의 이야기가 음악이 되는 순간</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <a href="./index.html" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-100">프롬프트 저장소</a>
+      <a href="./lyricvisualizer-pro.html" class="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 shadow-sm hover:bg-indigo-100">LyricVisualizer Pro</a>
+    </div>
+  </header>
+
+  <main class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <div class="lg:col-span-5 space-y-6">
+      <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+        <div class="flex items-center gap-2 text-indigo-600 font-bold border-b pb-2 mb-4">
+          <i class="fa-solid fa-sliders-h"></i>
+          <span>기본 설정</span>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-semibold text-slate-700">장르 선택</label>
+          <select id="genre" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"></select>
+        </div>
+
+        <div id="subgenre-container" class="space-y-2 hidden">
+          <label class="text-sm font-semibold text-slate-700">일렉트로닉 세부 장르</label>
+          <select id="subGenre" class="w-full p-2.5 bg-indigo-50 border border-indigo-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"></select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <label class="text-sm font-semibold text-slate-700 flex items-center gap-1">
+              <i class="fa-solid fa-language"></i> 가사 언어
+            </label>
+            <select id="language" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"></select>
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-sm font-semibold text-indigo-600 flex items-center gap-1">
+              <i class="fa-solid fa-microphone"></i> 코러스 언어
+            </label>
+            <select id="chorusLanguage" class="w-full p-2.5 bg-indigo-50 border border-indigo-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 font-medium"></select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <label class="text-sm font-semibold text-slate-700 flex items-center gap-1">
+              <i class="fa-solid fa-face-smile"></i> 분위기
+            </label>
+            <select id="mood" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"></select>
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-sm font-semibold text-slate-700 flex items-center gap-1">
+              <i class="fa-solid fa-layer-group"></i> 곡 구성
+            </label>
+            <select id="structure" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"></select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <label class="text-sm font-semibold text-slate-700 flex items-center gap-1">
+              <i class="fa-solid fa-clock"></i> BPM (<span id="bpm-value">120</span>)
+            </label>
+            <input type="range" id="bpm" min="60" max="200" step="1" value="120" class="w-full accent-indigo-600">
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-sm font-semibold text-slate-700">곡 길이</label>
+            <input type="text" id="duration" value="03:30" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500" placeholder="예: 03:45">
+          </div>
+        </div>
+      </section>
+
+      <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+        <div class="flex items-center gap-2 text-indigo-600 font-bold border-b pb-2 mb-4">
+          <i class="fa-solid fa-file-lines"></i>
+          <span>가사 모티브 (AI 학습용)</span>
+        </div>
+        <textarea id="motive" rows="5" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 resize-none text-sm leading-relaxed" placeholder="영화 '어바웃 타임'의 비오는 결혼식 장면처럼 찬란하고 행복한 순간을 가사로 써줘..."></textarea>
+
+        <div id="error" class="text-rose-500 text-xs font-medium min-h-[1.25rem]"></div>
+
+        <button onclick="handleGenerate()" id="generateBtn" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50">
+          <span id="btn-text">가사 생성하기</span>
+        </button>
+      </section>
+    </div>
+
+    <div class="lg:col-span-7">
+      <div class="bg-slate-900 rounded-2xl shadow-xl h-full flex flex-col overflow-hidden border border-slate-800">
+        <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/50 backdrop-blur-md sticky top-0 z-10">
+          <span class="text-slate-400 font-mono text-sm uppercase tracking-wider flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+            Generated Lyrics
+          </span>
+          <div class="flex gap-2">
+            <button onclick="resetAll()" class="p-2 text-slate-400 hover:text-white transition-colors" title="초기화">
+              <i class="fa-solid fa-rotate"></i>
+            </button>
+            <button onclick="copyToClipboard()" id="copyBtn" disabled class="p-2 text-slate-400 hover:text-white transition-colors disabled:opacity-30" title="복사">
+              <i class="fa-solid fa-copy"></i>
+            </button>
+          </div>
+        </div>
+
+        <div id="lyrics-container" class="flex-1 p-6 md:p-8 overflow-y-auto custom-scrollbar bg-[radial-gradient(circle_at_top_right,#1e2937_0%,#0f172a_100%)] text-slate-200 font-serif text-lg leading-relaxed whitespace-pre-wrap"></div>
+
+        <div class="p-4 bg-slate-950/50 border-t border-slate-800 text-[10px] text-slate-500 flex justify-between uppercase tracking-widest">
+          <span>Lyrics Engine v2.5 Flash</span>
+          <span>Ready for composition</span>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+const GENRES = [
+  "기독교/가스펠", "뉴에이지", "댄스", "독일팝", "독일포크", "동요",
+  "라틴", "레게", "록", "보컬", "블루스", "빅밴드", "사운드트랙",
+  "스포큰 워드", "싱어송라이터", "아프로비트", "아프로팝", "얼터너티브",
+  "월드뮤직", "일렉트로닉", "재즈", "컨트리", "코미디", "팝",
+  "펑크", "포크", "프렌치팝", "피트니스&운동", "홀리데이", "J-pop", "Kpop"
+];
+
+const ELECTRONIC_SUBGENRES = [
+  "빅룸", "브레이크비트", "칠 아웃", "딥 하우스", "드럼 앤 베이스", "덥스텝",
+  "일렉트로하우스", "일렉트로니카/다운템포", "펑크/소울/디스코", "글리치 합",
+  "하드 댄스", "하드코어/하드 테크노", "힙합/R&B", "하우스", "인디 댄스/누 디스코",
+  "미니멀/딥 테크", "프로그레시브 하우스", "싸이 트랜스", "레게/댄스홀/덥",
+  "테크 하우스", "테크노", "트랜스"
+];
+
+const LANGUAGES = ["한국어", "영어", "한국어 70% 영어 30%", "영어 70% 한국어 30%"];
+const CHORUS_LANGUAGES = ["한국어", "영어", "한국어 70% 영어 30%", "영어 70% 한국어 30%"];
+const MOODS = ["몽환적인", "에너제틱한", "우울하고 슬픈", "희망찬", "섹시한", "분노에 찬", "차분하고 고요한", "로맨틱한", "장난스러운", "웅장한"];
+const STRUCTURES = [
+  "Standard (Intro - Verse 1 - Chorus - Verse 2 - Chorus - Bridge - Chorus - Outro)",
+  "Simple (Verse 1 - Chorus - Verse 2 - Chorus)",
+  "Extended (Intro - Verse 1 - Pre-Chorus - Chorus - Verse 2 - Pre-Chorus - Chorus - Bridge - Chorus - Outro)",
+  "Storytelling (Verse 1 - Verse 2 - Verse 3 - Outro)",
+  "EDM Style (Intro - Build Up - Drop - Verse - Build Up - Drop - Outro)"
+];
+
+let config = {
+  genre: GENRES[23],
+  subGenre: ELECTRONIC_SUBGENRES[0],
+  language: LANGUAGES[0],
+  chorusLanguage: CHORUS_LANGUAGES[0],
+  mood: MOODS[0],
+  structure: STRUCTURES[0],
+  bpm: 120,
+  duration: "03:30",
+  motive: ""
+};
+
+let lyrics = "";
+let loading = false;
+
+function init() {
+  const genreSelect = document.getElementById('genre');
+  GENRES.forEach((g) => {
+    const opt = document.createElement('option');
+    opt.value = g;
+    opt.textContent = g;
+    genreSelect.appendChild(opt);
+  });
+  genreSelect.value = config.genre;
+  genreSelect.onchange = () => {
+    config.genre = genreSelect.value;
+    toggleSubgenre();
+  };
+
+  const subSelect = document.getElementById('subGenre');
+  ELECTRONIC_SUBGENRES.forEach((sg) => {
+    const opt = document.createElement('option');
+    opt.value = sg;
+    opt.textContent = sg;
+    subSelect.appendChild(opt);
+  });
+  subSelect.value = config.subGenre;
+  subSelect.onchange = () => config.subGenre = subSelect.value;
+
+  populateSelect('language', LANGUAGES, () => config.language = document.getElementById('language').value);
+  populateSelect('chorusLanguage', CHORUS_LANGUAGES, () => config.chorusLanguage = document.getElementById('chorusLanguage').value);
+  populateSelect('mood', MOODS, () => config.mood = document.getElementById('mood').value);
+  populateSelect('structure', STRUCTURES, () => config.structure = document.getElementById('structure').value);
+
+  const bpmInput = document.getElementById('bpm');
+  const bpmValue = document.getElementById('bpm-value');
+  bpmInput.oninput = () => {
+    config.bpm = parseInt(bpmInput.value, 10);
+    bpmValue.textContent = config.bpm;
+  };
+
+  document.getElementById('duration').onchange = (e) => config.duration = e.target.value;
+  document.getElementById('motive').oninput = (e) => config.motive = e.target.value;
+
+  toggleSubgenre();
+}
+
+function populateSelect(id, options, onChange) {
+  const sel = document.getElementById(id);
+  options.forEach((opt) => {
+    const option = document.createElement('option');
+    option.value = opt;
+    option.textContent = opt;
+    sel.appendChild(option);
+  });
+  sel.value = config[id === 'chorusLanguage' ? 'chorusLanguage' : id];
+  sel.onchange = onChange;
+}
+
+function toggleSubgenre() {
+  const container = document.getElementById('subgenre-container');
+  container.classList.toggle('hidden', !config.genre.includes('일렉트로닉'));
+}
+
+async function handleGenerate() {
+  if (!config.motive.trim()) {
+    showError("가사의 모티브를 입력해주세요.");
+    return;
+  }
+
+  loading = true;
+  lyrics = "";
+  updateUI();
+
+  const systemPrompt = `당신은 전문 작사가입니다. 사용자가 제공하는 설정을 바탕으로 고퀄리티의 음악 가사를 작성하세요.
+가사는 음악적 운율과 감성을 담아야 하며, 지정된 구조를 엄격히 따라야 합니다.
+특히 전체 가사 언어 설정과 코러스(Chorus) 전용 언어 설정이 다를 경우 이를 정확히 반영하여 작성하세요.`;
+
+  const userQuery = `
+다음 조건에 맞는 노래 가사를 작성해줘:
+1. 장르: ${config.genre} ${config.genre.includes("일렉트로닉") ? `(서브장르: ${config.subGenre})` : ""}
+2. 전체 가사 언어: ${config.language}
+3. 코러스(Chorus) 전용 언어: ${config.chorusLanguage}
+4. 분위기: ${config.mood}
+5. 가사 구성: ${config.structure}
+6. 곡 정보: BPM ${config.bpm}, 예상 길이 ${config.duration}
+7. 가사 모티브: ${config.motive}
+
+각 섹션([Intro], [Verse 1], [Chorus] 등)을 명확히 구분하고, 모티브가 자연스럽게 녹아나게 해줘.`;
+
+  try {
+    const response = await fetch('/api/gemini-generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gemini-2.5-flash',
+        payload: {
+          contents: [{ role: "user", parts: [{ text: userQuery }] }],
+          systemInstruction: {
+            role: "system",
+            parts: [{ text: systemPrompt }]
+          }
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData?.details?.error?.message || errorData?.error || `API 오류: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text || "가사를 생성하지 못했습니다.";
+    lyrics = generatedText;
+  } catch (err) {
+    console.error(err);
+    showError("가사 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+  } finally {
+    loading = false;
+    updateUI();
+  }
+}
+
+function showError(msg) {
+  document.getElementById('error').textContent = msg;
+  setTimeout(() => document.getElementById('error').textContent = "", 4000);
+}
+
+function updateUI() {
+  const container = document.getElementById('lyrics-container');
+  const btn = document.getElementById('generateBtn');
+  const btnText = document.getElementById('btn-text');
+  const copyBtn = document.getElementById('copyBtn');
+
+  if (loading) {
+    container.innerHTML = `
+      <div class="h-full flex flex-col items-center justify-center space-y-4 text-slate-400">
+        <div class="relative">
+          <div class="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+        <p class="animate-pulse">AI가 가사를 짓고 있습니다...</p>
+      </div>`;
+    btn.disabled = true;
+    btnText.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 생성 중...';
+  } else if (lyrics) {
+    container.innerHTML = `<div class="whitespace-pre-wrap">${lyrics}</div>`;
+    btn.disabled = false;
+    btnText.textContent = "가사 생성하기";
+    copyBtn.disabled = false;
+  } else {
+    container.innerHTML = `
+      <div class="h-full flex flex-col items-center justify-center space-y-4 text-slate-500 text-center">
+        <i class="fa-solid fa-music text-6xl opacity-20"></i>
+        <div>
+          <h3 class="text-lg font-bold text-slate-400">가사 엔진 준비됨</h3>
+          <p class="text-sm opacity-70">왼쪽에서 설정 후<br>가사 생성하기 버튼을 눌러주세요</p>
+        </div>
+      </div>`;
+    btn.disabled = false;
+    btnText.textContent = "가사 생성하기";
+    copyBtn.disabled = true;
+  }
+}
+
+function copyToClipboard() {
+  if (!lyrics) return;
+  navigator.clipboard.writeText(lyrics).then(() => {
+    alert("가사가 클립보드에 복사되었습니다!");
+  });
+}
+
+function resetAll() {
+  lyrics = "";
+  document.getElementById('motive').value = "";
+  config.motive = "";
+  updateUI();
+}
+
+init();
+updateUI();
+</script>
+
+</body>
+</html>
