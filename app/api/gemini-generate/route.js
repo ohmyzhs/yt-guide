@@ -9,7 +9,7 @@ export async function POST(request) {
 
   try {
     const body = await request.json();
-    const model = body?.model || "gemini-2.5-flash";
+    const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
     const payload = body?.payload;
 
     if (!payload || typeof payload !== "object") {

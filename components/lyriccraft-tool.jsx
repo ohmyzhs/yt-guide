@@ -102,7 +102,6 @@ export function LyricCraftTool() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "gemini-2.5-flash",
           payload: {
             contents: [{ role: "user", parts: [{ text: userQuery }] }],
             systemInstruction: {

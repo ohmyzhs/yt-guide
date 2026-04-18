@@ -200,7 +200,6 @@ OUTPUT FORMAT (Strict JSON only):
     const systemPrompt = buildSystemPrompt(mode);
     const userQuery = `Song Lyrics to Process:\n${form.lyrics}`;
     const result = await fetchGemini({
-      model: "gemini-2.5-flash",
       payload: {
         contents: [{ role: "user", parts: [{ text: `${systemPrompt}\n\n${userQuery}` }] }],
         generationConfig: { responseMimeType: "application/json", temperature: 0.7 },
