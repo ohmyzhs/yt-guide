@@ -142,11 +142,26 @@ function openSonotellerWindow() {
   window.open("https://sonoteller.ai/", "_blank", "noopener,noreferrer");
 }
 
+function isValidAnalysis(v) {
+  return (
+    v !== null &&
+    typeof v === "object" &&
+    v.lyrics &&
+    v.music &&
+    Array.isArray(v.music.genres) &&
+    Array.isArray(v.music.subgenres) &&
+    Array.isArray(v.music.moods) &&
+    Array.isArray(v.music.instruments)
+  );
+}
+
 export function SunoPromptWorkbench({ title, description, tags, content, sectionLabel }) {
   const [activeMode, setActiveMode] = usePersistedJsonState(MUSIC_WORKSPACE_KEYS.sunoMode, "free");
   const [userInput, setUserInput] = usePersistedJsonState(MUSIC_WORKSPACE_KEYS.sunoInput, "");
   const [analysisText, setAnalysisText] = usePersistedJsonState(MUSIC_WORKSPACE_KEYS.sunoAnalysisText, "");
-  const [parsedAnalysis, setParsedAnalysis] = usePersistedJsonState(MUSIC_WORKSPACE_KEYS.sunoAnalysisJson, null);
+  const [parsedAnalysisRaw, setParsedAnalysis] = usePersistedJsonState(MUSIC_WORKSPACE_KEYS.sunoAnalysisJson, null);
+  // 저장된 데이터가 현재 스키마와 맞지 않으면 null로 처리
+  const parsedAnalysis = isValidAnalysis(parsedAnalysisRaw) ? parsedAnalysisRaw : null;
   const [generatedPrompt, setGeneratedPrompt] = usePersistedJsonState(MUSIC_WORKSPACE_KEYS.sunoOutput, "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -370,20 +385,20 @@ export function SunoPromptWorkbench({ title, description, tags, content, section
                     <div className="mt-5 space-y-5">
                       <div>
                         <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Summary</p>
-                        <p className="mt-2 text-sm leading-7 text-slate-700">{parsedAnalysis.lyrics.summary}</p>
+                        <p className="mt-2 text-sm leading-7 text-slate-700">{parsedAnalysis.lyrics?.summary}</p>
                       </div>
 
                       <div className="grid gap-4 sm:grid-cols-2">
                         <div>
                           <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Moods</p>
                           <div className="mt-3 flex flex-wrap gap-2">
-                            {parsedAnalysis.lyrics.moods.map((item) => <ScoreBadge key={`${item.label}-${item.score}`} item={item} />)}
+                            {(parsedAnalysis.lyrics?.moods || []).map((item) => <ScoreBadge key={`${item.label}-${item.score}`} item={item} />)}
                           </div>
                         </div>
                         <div>
                           <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Themes</p>
                           <div className="mt-3 flex flex-wrap gap-2">
-                            {parsedAnalysis.lyrics.themes.map((item) => <ScoreBadge key={`${item.label}-${item.score}`} item={item} />)}
+                            {(parsedAnalysis.lyrics?.themes || []).map((item) => <ScoreBadge key={`${item.label}-${item.score}`} item={item} />)}
                           </div>
                         </div>
                       </div>
@@ -391,30 +406,30 @@ export function SunoPromptWorkbench({ title, description, tags, content, section
                       <div className="grid gap-4 sm:grid-cols-2">
                         <div className="rounded-[1.25rem] border border-black/8 bg-slate-50 p-4">
                           <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">Language</p>
-                          <p className="mt-2 text-lg font-black text-slate-900">{parsedAnalysis.lyrics.language || "-"}</p>
+                          <p className="mt-2 text-lg font-black text-slate-900">{parsedAnalysis.lyrics?.language || "-"}</p>
                         </div>
                         <div className="rounded-[1.25rem] border border-black/8 bg-slate-50 p-4">
                           <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">Explicit</p>
-                          <p className="mt-2 text-lg font-black text-slate-900">{parsedAnalysis.lyrics.explicit || "-"}</p>
+                          <p className="mt-2 text-lg font-black text-slate-900">{parsedAnalysis.lyrics?.explicit || "-"}</p>
                         </div>
                       </div>
 
                       <div className="grid gap-4 sm:grid-cols-2">
                         <div className="rounded-[1.25rem] border border-[var(--accent)]/14 bg-[var(--accent-soft)] p-4">
                           <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--accent-strong)]">BPM & Key</p>
-                          <p className="mt-2 text-lg font-black text-slate-900">{parsedAnalysis.music.bpm} BPM</p>
-                          <p className="mt-1 text-sm font-semibold text-slate-600">{parsedAnalysis.music.key}</p>
+                          <p className="mt-2 text-lg font-black text-slate-900">{parsedAnalysis.music?.bpm} BPM</p>
+                          <p className="mt-1 text-sm font-semibold text-slate-600">{parsedAnalysis.music?.key}</p>
                         </div>
                         <div className="rounded-[1.25rem] border border-black/8 bg-slate-50 p-4">
                           <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">Vocals</p>
-                          <p className="mt-2 text-lg font-black text-slate-900">{parsedAnalysis.music.vocals}</p>
+                          <p className="mt-2 text-lg font-black text-slate-900">{parsedAnalysis.music?.vocals}</p>
                         </div>
                       </div>
 
                       <div>
                         <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Genres</p>
                         <div className="mt-3 flex flex-wrap gap-2">
-                          {parsedAnalysis.music.genres.map((genre) => (
+                          {(parsedAnalysis.music?.genres || []).map((genre) => (
                             <div key={genre} className="rounded-full border border-black/8 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-700">
                               {genre}
                             </div>
@@ -422,11 +437,11 @@ export function SunoPromptWorkbench({ title, description, tags, content, section
                         </div>
                       </div>
 
-                      {parsedAnalysis.music.subgenres.length ? (
+                      {parsedAnalysis.music?.subgenres?.length ? (
                         <div>
                           <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Subgenres</p>
                           <div className="mt-3 flex flex-wrap gap-2">
-                            {parsedAnalysis.music.subgenres.map((genre) => (
+                            {(parsedAnalysis.music?.subgenres || []).map((genre) => (
                               <div key={genre} className="rounded-full border border-black/8 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-700">
                                 {genre}
                               </div>
@@ -435,20 +450,20 @@ export function SunoPromptWorkbench({ title, description, tags, content, section
                         </div>
                       ) : null}
 
-                      {parsedAnalysis.music.moods.length ? (
+                      {parsedAnalysis.music?.moods?.length ? (
                         <div>
                           <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Music Moods</p>
                           <div className="mt-3 flex flex-wrap gap-2">
-                            {parsedAnalysis.music.moods.map((item) => <ScoreBadge key={`${item.label}-${item.score}-music`} item={item} />)}
+                            {(parsedAnalysis.music?.moods || []).map((item) => <ScoreBadge key={`${item.label}-${item.score}-music`} item={item} />)}
                           </div>
                         </div>
                       ) : null}
 
-                      {parsedAnalysis.music.instruments.length ? (
+                      {parsedAnalysis.music?.instruments?.length ? (
                         <div>
                           <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Instruments</p>
                           <div className="mt-3 flex flex-wrap gap-2">
-                            {parsedAnalysis.music.instruments.map((instrument) => (
+                            {(parsedAnalysis.music?.instruments || []).map((instrument) => (
                               <div key={instrument} className="rounded-full border border-black/8 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-700">
                                 {instrument}
                               </div>
