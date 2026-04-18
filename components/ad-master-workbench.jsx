@@ -7,7 +7,7 @@ import { MUSIC_WORKSPACE_KEYS, usePersistedJsonState } from "@/lib/music-workspa
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const FLOW_URL = "https://klingai.com";
+const FLOW_URL = "https://labs.google/fx/ko/tools/flow";
 
 const SEEDANCE_TIPS = [
   {
@@ -208,7 +208,13 @@ function buildStep1Request(form) {
 
 지금은 ① 스토리보드 표와 ② 피사체 생성 프롬프트만 출력해주세요.
 ③ 승인 요청 문장("수정할 내용이 있나요? 없으면 승인을 해주세요.")까지만 출력하고,
-④ 최종 영상 프롬프트는 아직 생성하지 마세요.`;
+④ 최종 영상 프롬프트는 아직 생성하지 마세요.
+
+【② 피사체 생성 프롬프트 작성 시 아래 레이아웃 규칙을 반드시 적용할 것】
+- 사람 피사체: 가로 2분할 이미지 구성 — 왼쪽에 전신 모습, 오른쪽에 얼굴 크게 확대한 모습. 프롬프트 마지막에 반드시 "front-view, neutral expression, studio lighting, clean white background" 추가.
+- 동물 피사체: 가로 2분할 — 왼쪽 정면 모습, 오른쪽 측면 모습.
+- 물건/제품 피사체: 가로 2분할 — 왼쪽 전면 모습, 오른쪽 후면 모습.
+- 반복 등장하는 피사체만 포함하고, 단발성 대상은 제외한다.`;
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -406,7 +412,7 @@ export function AdMasterWorkbench({ title, description, tags, content, sectionLa
             rel="noopener noreferrer"
             className="flex items-center justify-between rounded-2xl border border-[var(--accent)]/25 bg-[var(--accent-soft)] px-4 py-3 text-sm font-bold text-[var(--accent)] transition hover:bg-[var(--accent)]/14"
           >
-            <span>Kling Flow 열기</span>
+            <span>Flow 열기</span>
             <span className="text-base leading-none">↗</span>
           </a>
           <CopyButton
