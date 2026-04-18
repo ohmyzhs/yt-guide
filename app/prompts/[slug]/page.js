@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { PromptDocument } from "@/components/prompt-document";
+import { SunoPromptWorkbench } from "@/components/suno-prompt-workbench";
 import { getAllPromptSlugs, getPromptPageBySlug } from "@/lib/site-content";
 
 export function generateStaticParams() {
@@ -12,6 +13,10 @@ export default async function PromptPage({ params }) {
 
   if (!promptPage) {
     notFound();
+  }
+
+  if (slug === "suno-prompt") {
+    return <SunoPromptWorkbench {...promptPage} />;
   }
 
   return <PromptDocument {...promptPage} />;
