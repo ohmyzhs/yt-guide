@@ -16,6 +16,9 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata = {
   title: "YT Guide",
   description: "개인 프롬프트 저장소와 제작 도구를 하나의 앱 셸로 통합한 제작 워크스페이스",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({ children }) {
