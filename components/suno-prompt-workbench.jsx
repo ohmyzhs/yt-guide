@@ -69,42 +69,58 @@ function parseScoreList(value) {
     .filter(Boolean);
 }
 
+function extractSection(text, heading, nextHeadings) {
+  const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const nextPattern = nextHeadings
+    .map((item) => item.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("|");
+  const pattern = new RegExp(`${escapedHeading}\\s*\\n([\\s\\S]*?)(?=\\n(?:${nextPattern})\\s*\\n|$)`, "i");
+  const match = text.match(pattern);
+  return match ? match[1].trim() : null;
+}
+
 function parseSonotellerText(rawText) {
   const text = rawText.replace(/\r\n/g, "\n").trim();
   if (!text) {
     throw new Error("Sonoteller 분석 결과를 먼저 붙여넣어 주세요.");
   }
 
-  // LYRICS ANALYSIS 영역의 Summary 본문만 잡는다. 다음 Moods 헤더 전까지를 summary로 사용한다.
-  const summaryMatch = text.match(/LYRICS ANALYSIS[\s\S]*?Summary\s*\n([\s\S]*?)\nMoods\s*\n/i);
-  // "Label (Score), Label (Score)" 형태의 moods 행을 추출한다.
-  const moodsMatch = text.match(/Moods\s*\n([\s\S]*?)\nThemes\s*\n/i);
-  // themes 행은 다음 MUSIC ANALYSIS 헤더 전까지를 사용한다.
-  const themesMatch = text.match(/Themes\s*\n([\s\S]*?)\nMUSIC ANALYSIS/i);
-  // genres 행은 다음 BPM & Key 헤더 전까지를 사용한다.
-  const genresMatch = text.match(/Genres\s*\n([\s\S]*?)\nBPM\s*&\s*Key\s*\n/i);
-  // BPM 숫자와 Key 문자열을 한 줄에서 분리한다.
-  const bpmKeyMatch = text.match(/BPM\s*&\s*Key\s*\n(\d+(?:\.\d+)?)BPM\s*,\s*(.+?)\nVocals\s*\n/i);
-  // Vocals는 다음 줄 끝 또는 안내 문구 전까지만 사용한다.
-  const vocalsMatch = text.match(/Vocals\s*\n([\s\S]*?)(?:\n코드를 사용할 때는 주의가 필요합니다\.?|$)/i);
+  // 각 섹션 헤더와 다음 헤더 사이만 비탐욕적으로 잘라서, 중간에 다른 필드가 끼어도 섹션 오염이 없게 만든다.
+  const summary = extractSection(text, "Summary", ["Moods"]);
+  const lyricMoods = extractSection(text, "Moods", ["Themes"]);
+  const themes = extractSection(text, "Themes", ["Language", "MUSIC ANALYSIS"]);
+  const language = extractSection(text, "Language", ["Explicit", "MUSIC ANALYSIS"]);
+  const explicit = extractSection(text, "Explicit", ["MUSIC ANALYSIS"]);
+  const genres = extractSection(text, "Genres", ["Subgenres", "Moods", "BPM & Key"]);
+  const subgenres = extractSection(text, "Subgenres", ["Moods", "Instruments", "BPM & Key"]);
+  const musicMoods = extractSection(text, "Moods", ["Instruments", "BPM & Key"]);
+  const instruments = extractSection(text, "Instruments", ["BPM & Key"]);
+  const bpmAndKey = extractSection(text, "BPM & Key", ["Vocals"]);
+  const vocals = extractSection(text, "Vocals", ["코드를 사용할 때는 주의가 필요합니다."]);
 
-  if (!summaryMatch || !moodsMatch || !themesMatch || !genresMatch || !bpmKeyMatch || !vocalsMatch) {
+  // "123.05BPM, A Major" 한 줄에서 BPM 숫자와 Key 문자열을 분리한다.
+  const bpmKeyMatch = bpmAndKey?.match(/(\d+(?:\.\d+)?)BPM\s*,\s*(.+)/i);
+
+  if (!summary || !lyricMoods || !themes || !genres || !bpmKeyMatch || !vocals) {
     throw new Error("Sonoteller 텍스트 형식을 인식하지 못했습니다. 원문 전체를 그대로 붙여넣어 주세요.");
   }
 
-  const genres = parseScoreList(genresMatch[1]).map((entry) => entry.label);
-
   return {
     lyrics: {
-      summary: summaryMatch[1].trim(),
-      moods: parseScoreList(moodsMatch[1]),
-      themes: parseScoreList(themesMatch[1]),
+      summary: summary.trim(),
+      moods: parseScoreList(lyricMoods),
+      themes: parseScoreList(themes),
+      language: language?.trim() || null,
+      explicit: explicit?.trim() || null,
     },
     music: {
-      genres,
+      genres: parseScoreList(genres).map((entry) => entry.label),
+      subgenres: subgenres ? parseScoreList(subgenres).map((entry) => entry.label) : [],
+      moods: musicMoods ? parseScoreList(musicMoods) : [],
+      instruments: instruments ? instruments.split(/\s*,\s*/).map((item) => item.trim()).filter(Boolean) : [],
       bpm: Number(bpmKeyMatch[1]),
       key: bpmKeyMatch[2].trim(),
-      vocals: vocalsMatch[1].trim(),
+      vocals: vocals.trim(),
     },
   };
 }
@@ -374,6 +390,17 @@ export function SunoPromptWorkbench({ title, description, tags, content, section
                       </div>
 
                       <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="rounded-[1.25rem] border border-black/8 bg-slate-50 p-4">
+                          <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">Language</p>
+                          <p className="mt-2 text-lg font-black text-slate-900">{parsedAnalysis.lyrics.language || "-"}</p>
+                        </div>
+                        <div className="rounded-[1.25rem] border border-black/8 bg-slate-50 p-4">
+                          <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">Explicit</p>
+                          <p className="mt-2 text-lg font-black text-slate-900">{parsedAnalysis.lyrics.explicit || "-"}</p>
+                        </div>
+                      </div>
+
+                      <div className="grid gap-4 sm:grid-cols-2">
                         <div className="rounded-[1.25rem] border border-[var(--accent)]/14 bg-[var(--accent-soft)] p-4">
                           <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--accent-strong)]">BPM & Key</p>
                           <p className="mt-2 text-lg font-black text-slate-900">{parsedAnalysis.music.bpm} BPM</p>
@@ -395,6 +422,41 @@ export function SunoPromptWorkbench({ title, description, tags, content, section
                           ))}
                         </div>
                       </div>
+
+                      {parsedAnalysis.music.subgenres.length ? (
+                        <div>
+                          <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Subgenres</p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {parsedAnalysis.music.subgenres.map((genre) => (
+                              <div key={genre} className="rounded-full border border-black/8 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-700">
+                                {genre}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+
+                      {parsedAnalysis.music.moods.length ? (
+                        <div>
+                          <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Music Moods</p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {parsedAnalysis.music.moods.map((item) => <ScoreBadge key={`${item.label}-${item.score}-music`} item={item} />)}
+                          </div>
+                        </div>
+                      ) : null}
+
+                      {parsedAnalysis.music.instruments.length ? (
+                        <div>
+                          <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Instruments</p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {parsedAnalysis.music.instruments.map((instrument) => (
+                              <div key={instrument} className="rounded-full border border-black/8 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-700">
+                                {instrument}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                   ) : (
                     <div className="mt-5 flex min-h-[260px] items-center justify-center rounded-[1.25rem] border border-dashed border-black/8 bg-slate-50/80 p-6 text-center text-sm leading-7 text-slate-500">
