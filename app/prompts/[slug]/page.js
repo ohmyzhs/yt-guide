@@ -1,9 +1,6 @@
 import { notFound } from "next/navigation";
 import { ClientOnly } from "@/components/client-only";
 import { PromptDocument } from "@/components/prompt-document";
-import { SunoPromptWorkbench } from "@/components/suno-prompt-workbench";
-import { CharacterSheetWorkbench } from "@/components/character-sheet-workbench";
-import { AdMasterWorkbench } from "@/components/ad-master-workbench";
 import { getAllPromptSlugs, getPromptPageBySlug } from "@/lib/site-content";
 
 export function generateStaticParams() {
@@ -19,6 +16,7 @@ export default async function PromptPage({ params }) {
   }
 
   if (slug === "suno-prompt") {
+    const { SunoPromptWorkbench } = await import("@/components/suno-prompt-workbench");
     return (
       <ClientOnly>
         <SunoPromptWorkbench {...promptPage} />
@@ -27,6 +25,7 @@ export default async function PromptPage({ params }) {
   }
 
   if (slug === "character-sheet-master") {
+    const { CharacterSheetWorkbench } = await import("@/components/character-sheet-workbench");
     return (
       <ClientOnly>
         <CharacterSheetWorkbench {...promptPage} />
@@ -35,6 +34,7 @@ export default async function PromptPage({ params }) {
   }
 
   if (slug === "ad-master") {
+    const { AdMasterWorkbench } = await import("@/components/ad-master-workbench");
     return (
       <ClientOnly>
         <AdMasterWorkbench {...promptPage} />

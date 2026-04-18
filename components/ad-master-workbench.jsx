@@ -48,6 +48,20 @@ const INITIAL_FORM = {
 // Context to tell <code> it's inside a <pre> (block code vs inline)
 const InPreCtx = createContext(false);
 
+function MarkdownCode({ children, className }) {
+  const inPre = useContext(InPreCtx);
+
+  if (inPre) {
+    return <code className={`${className || ""} whitespace-pre-wrap text-emerald-300`}>{children}</code>;
+  }
+
+  return (
+    <code className="rounded bg-slate-700/50 px-1.5 py-0.5 font-mono text-xs text-emerald-300">
+      {children}
+    </code>
+  );
+}
+
 function MdViewer({ content }) {
   const components = {
     h1: ({ children }) => (
@@ -107,21 +121,7 @@ function MdViewer({ content }) {
         </pre>
       </InPreCtx.Provider>
     ),
-    code: ({ children, className }) => {
-      const inPre = useContext(InPreCtx);
-      if (inPre) {
-        return (
-          <code className={`${className || ""} whitespace-pre-wrap text-emerald-300`}>
-            {children}
-          </code>
-        );
-      }
-      return (
-        <code className="rounded bg-slate-700/50 px-1.5 py-0.5 font-mono text-xs text-emerald-300">
-          {children}
-        </code>
-      );
-    },
+    code: ({ children, className }) => <MarkdownCode className={className}>{children}</MarkdownCode>,
   };
 
   return (
