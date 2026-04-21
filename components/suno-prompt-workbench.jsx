@@ -67,6 +67,25 @@ function PresetFamilyButton({ family, count, active, onClick }) {
   );
 }
 
+function PresetGenreButton({ genre, count, active, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full rounded-[1.25rem] border px-4 py-3 text-left transition ${
+        active
+          ? "border-[var(--accent)] bg-[var(--accent-soft)] text-slate-900"
+          : "border-black/8 bg-white text-slate-600 hover:bg-slate-50"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-sm font-black">{genre}</span>
+        <span className="rounded-full border border-black/8 px-2 py-0.5 text-[11px] font-black">{count}</span>
+      </div>
+    </button>
+  );
+}
+
 function PresetCard({ preset, selected, onSelect }) {
   return (
     <article
@@ -226,6 +245,7 @@ export function SunoPromptWorkbench({ title, description, tags, content, section
     MUSIC_WORKSPACE_KEYS.sunoPresetFamily,
     SUNO_PRESET_FAMILIES[0]?.id || ""
   );
+  const [selectedPresetGenre, setSelectedPresetGenre] = usePersistedJsonState(MUSIC_WORKSPACE_KEYS.sunoPresetGenre, "");
   const [selectedPresetId, setSelectedPresetId] = usePersistedJsonState(MUSIC_WORKSPACE_KEYS.sunoPresetId, "");
   // 저장된 데이터가 현재 스키마와 맞지 않으면 null로 처리
   const parsedAnalysis = isValidAnalysis(parsedAnalysisRaw) ? parsedAnalysisRaw : null;
@@ -262,7 +282,18 @@ export function SunoPromptWorkbench({ title, description, tags, content, section
     () => SUNO_STYLE_PRESETS.find((preset) => preset.id === selectedPresetId) || null,
     [selectedPresetId]
   );
-  const visiblePresetGroups = presetGroupsByFamily[selectedPresetFamily] || [];
+  const visiblePresetGroups = useMemo(
+    () => presetGroupsByFamily[selectedPresetFamily] || [],
+    [presetGroupsByFamily, selectedPresetFamily]
+  );
+  const selectedFamily = useMemo(
+    () => SUNO_PRESET_FAMILIES.find((family) => family.id === selectedPresetFamily) || null,
+    [selectedPresetFamily]
+  );
+  const visiblePresetGroup = useMemo(() => {
+    if (visiblePresetGroups.length === 0) return null;
+    return visiblePresetGroups.find((group) => group.genre === selectedPresetGenre) || visiblePresetGroups[0];
+  }, [selectedPresetGenre, visiblePresetGroups]);
 
   async function requestPromptGeneration(userPrompt) {
     const response = await fetch("/api/gemini-generate", {
@@ -348,12 +379,27 @@ export function SunoPromptWorkbench({ title, description, tags, content, section
     setAnalysisText("");
     setParsedAnalysis(null);
     setSelectedPresetFamily(SUNO_PRESET_FAMILIES[0]?.id || "");
+    setSelectedPresetGenre("");
     setSelectedPresetId("");
     setGeneratedPrompt("");
     setError("");
   }
 
+  function handleFamilySelect(familyId) {
+    setSelectedPresetFamily(familyId);
+    const nextGroups = presetGroupsByFamily[familyId] || [];
+    setSelectedPresetGenre(nextGroups[0]?.genre || "");
+    setSelectedPresetId("");
+  }
+
+  function handleGenreSelect(genre) {
+    setSelectedPresetGenre(genre);
+    setSelectedPresetId("");
+  }
+
   function handlePresetSelect(preset) {
+    setSelectedPresetFamily(preset.familyId);
+    setSelectedPresetGenre(preset.genre);
     setSelectedPresetId(preset.id);
     setGeneratedPrompt(preset.prompt);
     setError("");
@@ -606,84 +652,66 @@ export function SunoPromptWorkbench({ title, description, tags, content, section
             </div>
           ) : (
             <div className="mt-5 grid gap-5 xl:grid-cols-[280px_minmax(0,1fr)]">
-              <div className="space-y-3">
-                <div>
-                  <h3 className="text-lg font-black text-slate-900">1뎁스 카테고리</h3>
-                  <p className="mt-2 text-sm leading-7 text-slate-600">
-                    PDF에 포함된 프리셋을 장르 성격 기준으로 1차 분류했습니다. 카테고리를 누르면 우측에 세부 프리셋이 표시됩니다.
-                    원문 PDF에는 실제로 300개 프리셋이 수록되어 있어 모두 반영했습니다.
-                  </p>
-                </div>
-                <div className="space-y-3">
-                  {SUNO_PRESET_FAMILIES.map((family) => (
-                    <PresetFamilyButton
-                      key={family.id}
-                      family={family}
-                      count={presetCountByFamily[family.id] || 0}
-                      active={selectedPresetFamily === family.id}
-                      onClick={() => setSelectedPresetFamily(family.id)}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-[1.5rem] border border-black/8 bg-white/75 p-5">
-                <div className="flex flex-col gap-3 border-b border-black/6 pb-4 lg:flex-row lg:items-end lg:justify-between">
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-[0.24em] text-[var(--accent)]">Preset Library</p>
-                    <h3 className="mt-2 text-lg font-black text-slate-900">
-                      {SUNO_PRESET_FAMILIES.find((family) => family.id === selectedPresetFamily)?.label || "프리셋"}
-                    </h3>
-                    <p className="mt-2 text-sm leading-7 text-slate-600">
-                      우측 프리셋 카드의 `선택` 버튼을 누르면 API 호출 없이 하단 Generated Prompt 영역에 영문 프롬프트가 즉시 반영됩니다.
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <div className="rounded-full border border-black/8 bg-slate-50 px-3 py-1 text-xs font-black text-slate-600">
-                      총 {visiblePresetGroups.reduce((count, group) => count + group.presets.length, 0)}개
+              <div className="space-y-3 xl:col-span-2">
+                <div className="grid gap-4 xl:grid-cols-[240px_260px_minmax(0,1fr)]">
+                  <div className="rounded-[1.5rem] border border-black/8 bg-white/75 p-4">
+                    <p className="text-xs font-black uppercase tracking-[0.24em] text-[var(--accent)]">1 Depth</p>
+                    <h3 className="mt-2 text-lg font-black text-slate-900">카테고리</h3>
+                    <div className="mt-4 space-y-3">
+                      {SUNO_PRESET_FAMILIES.map((family) => (
+                        <PresetFamilyButton
+                          key={family.id}
+                          family={family}
+                          count={presetCountByFamily[family.id] || 0}
+                          active={selectedPresetFamily === family.id}
+                          onClick={() => handleFamilySelect(family.id)}
+                        />
+                      ))}
                     </div>
-                    <CopyButton
-                      label="선택 프롬프트 복사"
-                      value={selectedPreset?.prompt || ""}
-                      disabled={!selectedPreset}
-                    />
                   </div>
-                </div>
 
-                {selectedPreset ? (
-                  <div className="mt-4 rounded-[1.25rem] border border-[var(--accent)]/14 bg-[var(--accent-soft)] p-4">
-                    <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--accent-strong)]">현재 선택</p>
-                    <p className="mt-2 text-base font-black text-slate-900">
-                      {selectedPreset.genre} · {selectedPreset.title}
-                    </p>
-                    <p className="mt-2 line-clamp-3 text-sm leading-7 text-slate-600">{selectedPreset.prompt}</p>
+                  <div className="rounded-[1.5rem] border border-black/8 bg-white/75 p-4">
+                    <p className="text-xs font-black uppercase tracking-[0.24em] text-[var(--accent)]">2 Depth</p>
+                    <h3 className="mt-2 text-lg font-black text-slate-900">{selectedFamily?.label || "장르"}</h3>
+                    <div className="mt-4 space-y-3">
+                      {visiblePresetGroups.map((group) => (
+                        <PresetGenreButton
+                          key={group.genre}
+                          genre={group.genre}
+                          count={group.presets.length}
+                          active={visiblePresetGroup?.genre === group.genre}
+                          onClick={() => handleGenreSelect(group.genre)}
+                        />
+                      ))}
+                    </div>
                   </div>
-                ) : null}
 
-                <div className="app-scrollbar mt-5 max-h-[820px] overflow-auto pr-1">
-                  <div className="space-y-5">
-                    {visiblePresetGroups.map((group) => (
-                      <section key={group.genre} className="space-y-3">
-                        <div className="sticky top-0 z-10 rounded-2xl border border-black/6 bg-[var(--surface)]/95 px-4 py-3 backdrop-blur">
-                          <div className="flex items-center justify-between gap-3">
-                            <div>
-                              <p className="text-sm font-black text-slate-900">{group.genre}</p>
-                              <p className="mt-1 text-xs text-slate-500">{group.presets.length}개 프리셋</p>
-                            </div>
-                          </div>
+                  <div className="rounded-[1.5rem] border border-black/8 bg-white/75 p-5">
+                    <div className="flex flex-col gap-3 border-b border-black/6 pb-4 lg:flex-row lg:items-end lg:justify-between">
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-[0.24em] text-[var(--accent)]">3 Depth</p>
+                        <h3 className="mt-2 text-lg font-black text-slate-900">{visiblePresetGroup?.genre || "프리셋"}</h3>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <div className="rounded-full border border-black/8 bg-slate-50 px-3 py-1 text-xs font-black text-slate-600">
+                          {visiblePresetGroup?.presets.length || 0}개
                         </div>
-                        <div className="space-y-3">
-                          {group.presets.map((preset) => (
-                            <PresetCard
-                              key={preset.id}
-                              preset={preset}
-                              selected={selectedPresetId === preset.id}
-                              onSelect={() => handlePresetSelect(preset)}
-                            />
-                          ))}
-                        </div>
-                      </section>
-                    ))}
+                        <CopyButton label="선택 프롬프트 복사" value={selectedPreset?.prompt || ""} disabled={!selectedPreset} />
+                      </div>
+                    </div>
+
+                    <div className="app-scrollbar mt-5 max-h-[820px] overflow-auto pr-1">
+                      <div className="space-y-3">
+                        {(visiblePresetGroup?.presets || []).map((preset) => (
+                          <PresetCard
+                            key={preset.id}
+                            preset={preset}
+                            selected={selectedPresetId === preset.id}
+                            onSelect={() => handlePresetSelect(preset)}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
