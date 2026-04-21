@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { MUSIC_WORKSPACE_KEYS, usePersistedJsonState } from "@/lib/music-workspace";
+import { SUNO_PRESET_FAMILIES, SUNO_STYLE_PRESETS } from "@/lib/suno-style-presets";
 
 function CopyButton({ label, value, disabled = false, fullWidth = false, tone = "accent" }) {
   const [copied, setCopied] = useState(false);
@@ -39,6 +40,67 @@ function ScoreBadge({ item }) {
     <div className="rounded-full border border-[var(--accent)]/18 bg-[var(--accent-soft)] px-3 py-1 text-xs font-bold text-[var(--accent-strong)]">
       {item.label} <span className="opacity-70">({item.score})</span>
     </div>
+  );
+}
+
+function PresetFamilyButton({ family, count, active, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full rounded-[1.5rem] border px-4 py-4 text-left transition ${
+        active
+          ? "border-[var(--accent)] bg-[var(--accent-soft)] text-slate-900 shadow-[0_14px_30px_rgba(217,119,6,0.12)]"
+          : "border-black/8 bg-white text-slate-600 hover:bg-slate-50"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-black">{family.label}</p>
+          <p className="mt-2 text-xs leading-6 opacity-75">{family.description}</p>
+        </div>
+        <span className="rounded-full border border-black/8 px-2.5 py-1 text-[11px] font-black">
+          {count}
+        </span>
+      </div>
+    </button>
+  );
+}
+
+function PresetCard({ preset, selected, onSelect }) {
+  return (
+    <article
+      className={`rounded-[1.5rem] border p-4 transition ${
+        selected
+          ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-[0_16px_32px_rgba(217,119,6,0.12)]"
+          : "border-black/8 bg-white"
+      }`}
+    >
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--accent)]">{preset.genre}</p>
+          <h4 className="mt-2 text-base font-black text-slate-900">{preset.title}</h4>
+          <p className="mt-2 line-clamp-3 text-sm leading-7 text-slate-600">{preset.prompt}</p>
+        </div>
+        <div className="flex shrink-0 gap-2">
+          <button
+            type="button"
+            onClick={onSelect}
+            className="rounded-2xl bg-[var(--accent)] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[var(--accent-strong)]"
+          >
+            선택
+          </button>
+          <button
+            type="button"
+            disabled
+            className="rounded-2xl border border-black/8 bg-white px-4 py-2.5 text-sm font-bold text-slate-400"
+            title="음원 연결 전까지 비활성화"
+          >
+            미리듣기
+          </button>
+        </div>
+      </div>
+    </article>
   );
 }
 
@@ -160,12 +222,47 @@ export function SunoPromptWorkbench({ title, description, tags, content, section
   const [userInput, setUserInput] = usePersistedJsonState(MUSIC_WORKSPACE_KEYS.sunoInput, "");
   const [analysisText, setAnalysisText] = usePersistedJsonState(MUSIC_WORKSPACE_KEYS.sunoAnalysisText, "");
   const [parsedAnalysisRaw, setParsedAnalysis] = usePersistedJsonState(MUSIC_WORKSPACE_KEYS.sunoAnalysisJson, null);
+  const [selectedPresetFamily, setSelectedPresetFamily] = usePersistedJsonState(
+    MUSIC_WORKSPACE_KEYS.sunoPresetFamily,
+    SUNO_PRESET_FAMILIES[0]?.id || ""
+  );
+  const [selectedPresetId, setSelectedPresetId] = usePersistedJsonState(MUSIC_WORKSPACE_KEYS.sunoPresetId, "");
   // 저장된 데이터가 현재 스키마와 맞지 않으면 null로 처리
   const parsedAnalysis = isValidAnalysis(parsedAnalysisRaw) ? parsedAnalysisRaw : null;
   const [generatedPrompt, setGeneratedPrompt] = usePersistedJsonState(MUSIC_WORKSPACE_KEYS.sunoOutput, "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const rules = useMemo(() => getGenerationRules(content), [content]);
+  const presetCountByFamily = useMemo(() => {
+    return SUNO_STYLE_PRESETS.reduce((counts, preset) => {
+      counts[preset.familyId] = (counts[preset.familyId] || 0) + 1;
+      return counts;
+    }, {});
+  }, []);
+  const presetGroupsByFamily = useMemo(() => {
+    return SUNO_STYLE_PRESETS.reduce((families, preset) => {
+      if (!families[preset.familyId]) {
+        families[preset.familyId] = [];
+      }
+
+      let group = families[preset.familyId].find((item) => item.genre === preset.genre);
+      if (!group) {
+        group = {
+          genre: preset.genre,
+          presets: [],
+        };
+        families[preset.familyId].push(group);
+      }
+
+      group.presets.push(preset);
+      return families;
+    }, {});
+  }, []);
+  const selectedPreset = useMemo(
+    () => SUNO_STYLE_PRESETS.find((preset) => preset.id === selectedPresetId) || null,
+    [selectedPresetId]
+  );
+  const visiblePresetGroups = presetGroupsByFamily[selectedPresetFamily] || [];
 
   async function requestPromptGeneration(userPrompt) {
     const response = await fetch("/api/gemini-generate", {
@@ -214,6 +311,18 @@ export function SunoPromptWorkbench({ title, description, tags, content, section
       return;
     }
 
+    if (activeMode === "preset") {
+      if (!selectedPreset) {
+        setError("오른쪽 목록에서 적용할 프리셋을 먼저 선택해주세요.");
+        window.setTimeout(() => setError(""), 3000);
+        return;
+      }
+
+      setGeneratedPrompt(selectedPreset.prompt);
+      setError("");
+      return;
+    }
+
     setLoading(true);
     setError("");
     setGeneratedPrompt("");
@@ -238,7 +347,15 @@ export function SunoPromptWorkbench({ title, description, tags, content, section
     setUserInput("");
     setAnalysisText("");
     setParsedAnalysis(null);
+    setSelectedPresetFamily(SUNO_PRESET_FAMILIES[0]?.id || "");
+    setSelectedPresetId("");
     setGeneratedPrompt("");
+    setError("");
+  }
+
+  function handlePresetSelect(preset) {
+    setSelectedPresetId(preset.id);
+    setGeneratedPrompt(preset.prompt);
     setError("");
   }
 
@@ -272,7 +389,7 @@ export function SunoPromptWorkbench({ title, description, tags, content, section
               <p className="text-xs font-black uppercase tracking-[0.24em] text-[var(--accent)]">Suno Generator</p>
               <h2 className="mt-2 text-2xl font-black tracking-[-0.04em] text-slate-900">입력 방식을 선택해 Suno 프롬프트를 생성하세요.</h2>
               <p className="mt-3 text-sm leading-7 text-slate-600">
-                자유 입력으로 바로 방향을 설명하거나, 기존 유튜브 영상의 Sonoteller 분석 결과를 붙여넣어 스타일을 추출할 수 있습니다.
+                자유 입력, Sonoteller 분석 붙여넣기, PDF 기반 스타일 프리셋 중 원하는 방식으로 결과를 만들 수 있습니다.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -286,10 +403,10 @@ export function SunoPromptWorkbench({ title, description, tags, content, section
               <button
                 type="button"
                 onClick={handleGenerate}
-                disabled={loading}
+                disabled={loading || (activeMode === "preset" && !selectedPreset)}
                 className="rounded-2xl bg-[var(--accent)] px-5 py-3 text-sm font-black text-white transition hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {loading ? "생성 중..." : "프롬프트 만들기"}
+                {loading ? "생성 중..." : activeMode === "preset" ? "선택한 프리셋 적용" : "프롬프트 만들기"}
               </button>
             </div>
           </div>
@@ -309,6 +426,13 @@ export function SunoPromptWorkbench({ title, description, tags, content, section
             >
               기존 유튜브 영상에서 스타일 추출하기
             </button>
+            <button
+              type="button"
+              onClick={() => setActiveMode("preset")}
+              className={`rounded-full px-4 py-2 text-sm font-bold transition ${activeMode === "preset" ? "bg-[var(--accent)] text-white" : "text-slate-500"}`}
+            >
+              음악스타일100종프리셋
+            </button>
           </div>
 
           {activeMode === "free" ? (
@@ -327,7 +451,7 @@ export function SunoPromptWorkbench({ title, description, tags, content, section
                 placeholder="만들고 싶은 음악의 무드, 장르, 보컬, 질감, 참고하고 싶은 분위기를 자유롭게 적어주세요."
               />
             </div>
-          ) : (
+          ) : activeMode === "analysis" ? (
             <div className="mt-5 grid gap-5">
               <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
                 <div className="grid gap-3">
@@ -477,6 +601,90 @@ export function SunoPromptWorkbench({ title, description, tags, content, section
                       분석 데이터를 추출하면 moods, themes, genres, BPM, key, vocals가 여기 카드 형태로 정리됩니다.
                     </div>
                   )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-5 grid gap-5 xl:grid-cols-[280px_minmax(0,1fr)]">
+              <div className="space-y-3">
+                <div>
+                  <h3 className="text-lg font-black text-slate-900">1뎁스 카테고리</h3>
+                  <p className="mt-2 text-sm leading-7 text-slate-600">
+                    PDF에 포함된 프리셋을 장르 성격 기준으로 1차 분류했습니다. 카테고리를 누르면 우측에 세부 프리셋이 표시됩니다.
+                    원문 PDF에는 실제로 300개 프리셋이 수록되어 있어 모두 반영했습니다.
+                  </p>
+                </div>
+                <div className="space-y-3">
+                  {SUNO_PRESET_FAMILIES.map((family) => (
+                    <PresetFamilyButton
+                      key={family.id}
+                      family={family}
+                      count={presetCountByFamily[family.id] || 0}
+                      active={selectedPresetFamily === family.id}
+                      onClick={() => setSelectedPresetFamily(family.id)}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-[1.5rem] border border-black/8 bg-white/75 p-5">
+                <div className="flex flex-col gap-3 border-b border-black/6 pb-4 lg:flex-row lg:items-end lg:justify-between">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.24em] text-[var(--accent)]">Preset Library</p>
+                    <h3 className="mt-2 text-lg font-black text-slate-900">
+                      {SUNO_PRESET_FAMILIES.find((family) => family.id === selectedPresetFamily)?.label || "프리셋"}
+                    </h3>
+                    <p className="mt-2 text-sm leading-7 text-slate-600">
+                      우측 프리셋 카드의 `선택` 버튼을 누르면 API 호출 없이 하단 Generated Prompt 영역에 영문 프롬프트가 즉시 반영됩니다.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <div className="rounded-full border border-black/8 bg-slate-50 px-3 py-1 text-xs font-black text-slate-600">
+                      총 {visiblePresetGroups.reduce((count, group) => count + group.presets.length, 0)}개
+                    </div>
+                    <CopyButton
+                      label="선택 프롬프트 복사"
+                      value={selectedPreset?.prompt || ""}
+                      disabled={!selectedPreset}
+                    />
+                  </div>
+                </div>
+
+                {selectedPreset ? (
+                  <div className="mt-4 rounded-[1.25rem] border border-[var(--accent)]/14 bg-[var(--accent-soft)] p-4">
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--accent-strong)]">현재 선택</p>
+                    <p className="mt-2 text-base font-black text-slate-900">
+                      {selectedPreset.genre} · {selectedPreset.title}
+                    </p>
+                    <p className="mt-2 line-clamp-3 text-sm leading-7 text-slate-600">{selectedPreset.prompt}</p>
+                  </div>
+                ) : null}
+
+                <div className="app-scrollbar mt-5 max-h-[820px] overflow-auto pr-1">
+                  <div className="space-y-5">
+                    {visiblePresetGroups.map((group) => (
+                      <section key={group.genre} className="space-y-3">
+                        <div className="sticky top-0 z-10 rounded-2xl border border-black/6 bg-[var(--surface)]/95 px-4 py-3 backdrop-blur">
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-black text-slate-900">{group.genre}</p>
+                              <p className="mt-1 text-xs text-slate-500">{group.presets.length}개 프리셋</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-3">
+                          {group.presets.map((preset) => (
+                            <PresetCard
+                              key={preset.id}
+                              preset={preset}
+                              selected={selectedPresetId === preset.id}
+                              onSelect={() => handlePresetSelect(preset)}
+                            />
+                          ))}
+                        </div>
+                      </section>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
