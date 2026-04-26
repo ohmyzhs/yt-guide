@@ -1,3 +1,9 @@
+import {
+  novelWebArchitectureContent,
+  novelThreeDepthPromptContent,
+  novelFantasyLongformPromptContent,
+} from "./novel-prompts.js";
+
 export const promptLibrary = {
   title: '개인 프롬프트 저장소',
   categories: [
@@ -49,6 +55,33 @@ sample #2
 클로드는 실제로 니가 갖고 온 자료를 못보잖아. 그 자료를 인용해서 할 수있게 해주고
 도입부 끝나고는 구독과 좋아요 멘트 자연스럽게 넣어줘
 너는 사실을 객관적이고 깊이 있게 전달하는 정보전달 해설가라고 설정해줘`,
+        },
+      ],
+    },
+    {
+      id: 'novel',
+      name: '소설 제작',
+      prompts: [
+        {
+          id: 'novel-web-architecture',
+          title: '웹소설 아키텍처',
+          summary: '웹소설 아키텍트 페르소나, 창작 독트린, 문체 가이드, 명령어 메뉴(기획·집필·퇴고)',
+          tags: ['웹소설', '연재', '문피아'],
+          content: novelWebArchitectureContent,
+        },
+        {
+          id: 'novel-3depth-prompt',
+          title: '소설용 3뎁스 프롬프트',
+          summary: '장편 플로터 설계, 챕터 집필, 설정 점검, 장편 판타지 설계·집필까지 한 파일에 묶은 템플릿',
+          tags: ['장편소설', '플롯', '판타지'],
+          content: novelThreeDepthPromptContent,
+        },
+        {
+          id: 'novel-fantasy-longform',
+          title: '장편 판타지 프롬프트',
+          summary: '상업 장편 판타지 1권 분량 설계·집필: 세계관, 힘의 시스템, 갈등, 챕터 구성, 본문 규칙',
+          tags: ['판타지', '세계관', '장편'],
+          content: novelFantasyLongformPromptContent,
         },
       ],
     },
