@@ -105,27 +105,17 @@ export async function POST(request) {
   const permissionMode =
     process.env.CLAUDE_PERMISSION_MODE || "bypassPermissions";
 
-  // Windows cmd quoting: wrap the whole prompt in double quotes and escape
-  // inner quotes by doubling them ("" inside "..."). This keeps the prompt
-  // (including the keyword with its surrounding quotes) as a single -p arg
-  // when shell:true on Windows. POSIX shells use \" escaping.
-  const promptArg = isWin
-    ? `"/blog-new ""${keyword}"""`
-    : `/blog-new "${keyword}"`;
+  // Send the prompt via stdin instead of as a CLI arg. This sidesteps the
+  // Windows cmd quoting nightmare entirely: shell:true makes Node spawn
+  // `cmd /d /s /c "<file> <args...>"`, and cmd re-parses the joined string
+  // so any embedded double-quotes get mangled. Piping the prompt over stdin
+  // is what Claude CLI does anyway when -p has no positional arg (see the
+  // "no stdin data received" warning when both were used).
+  const args = ["--permission-mode", permissionMode, "-p"];
+  const prompt = `/blog-new "${keyword}"`;
 
-  const args = [
-    "-p",
-    promptArg,
-    "--permission-mode",
-    permissionMode,
-  ];
-
-  appendLog(
-    job,
-    `$ ${cliBin} ${args
-      .map((a) => (a.includes(" ") ? `"${a}"` : a))
-      .join(" ")}\n`,
-  );
+  appendLog(job, `$ ${cliBin} ${args.join(" ")}\n`);
+  appendLog(job, `(stdin) ${prompt}\n`);
   appendLog(job, `(cwd: ${builderPath})\n\n`);
   job.status = "running";
 
@@ -144,6 +134,10 @@ export async function POST(request) {
     return Response.json({ jobId: id, status: "error" });
   }
   job.proc = proc;
+
+  // Feed the prompt and close stdin so claude doesn't wait for more input.
+  proc.stdin.write(prompt);
+  proc.stdin.end();
 
   const onChunk = (buf) => appendLog(job, buf.toString("utf8"));
   proc.stdout.on("data", onChunk);
