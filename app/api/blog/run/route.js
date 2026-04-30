@@ -105,36 +105,25 @@ export async function POST(request) {
   const permissionMode =
     process.env.CLAUDE_PERMISSION_MODE || "bypassPermissions";
 
-  // Windows cmd quoting: wrap the whole prompt in double quotes and escape
-  // inner quotes by doubling them ("" inside "..."). This keeps the prompt
-  // (including the keyword with its surrounding quotes) as a single -p arg
-  // when shell:true on Windows. POSIX shells use \" escaping.
-  const promptArg = isWin
-    ? `"/blog-new ""${keyword}"""`
-    : `/blog-new "${keyword}"`;
+  // Pass the prompt via stdin instead of as a -p argument. This avoids
+  // Windows cmd / CommandLineToArgvW quote-escape issues where `""` inside a
+  // quoted arg would split `/blog-new "키워드"` into two args and truncate
+  // the keyword. stdin bypasses argv tokenization entirely.
+  const stdinPrompt = `/blog-new "${keyword}"`;
+  const args = ["-p", "--permission-mode", permissionMode];
 
-  const args = [
-    "-p",
-    promptArg,
-    "--permission-mode",
-    permissionMode,
-  ];
-
-  appendLog(
-    job,
-    `$ ${cliBin} ${args
-      .map((a) => (a.includes(" ") ? `"${a}"` : a))
-      .join(" ")}\n`,
-  );
-  appendLog(job, `(cwd: ${builderPath})\n\n`);
+  appendLog(job, `$ ${cliBin} ${args.join(" ")}\n`);
+  appendLog(job, `(cwd: ${builderPath})\n`);
+  appendLog(job, `(stdin: ${stdinPrompt})\n\n`);
   job.status = "running";
 
   let proc;
   try {
     proc = spawn(cliBin, args, {
       cwd: builderPath,
-      shell: isWin, // .cmd on Windows requires shell; sanitization above keeps it safe
+      shell: isWin, // .cmd on Windows requires shell
       env: process.env,
+      stdio: ["pipe", "pipe", "pipe"],
     });
   } catch (e) {
     finishJob(job, {
@@ -144,6 +133,13 @@ export async function POST(request) {
     return Response.json({ jobId: id, status: "error" });
   }
   job.proc = proc;
+
+  try {
+    proc.stdin.write(stdinPrompt);
+    proc.stdin.end();
+  } catch (e) {
+    appendLog(job, `(stdin write failed: ${e.message})\n`);
+  }
 
   const onChunk = (buf) => appendLog(job, buf.toString("utf8"));
   proc.stdout.on("data", onChunk);
