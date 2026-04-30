@@ -105,9 +105,17 @@ export async function POST(request) {
   const permissionMode =
     process.env.CLAUDE_PERMISSION_MODE || "bypassPermissions";
 
+  // Windows cmd quoting: wrap the whole prompt in double quotes and escape
+  // inner quotes by doubling them ("" inside "..."). This keeps the prompt
+  // (including the keyword with its surrounding quotes) as a single -p arg
+  // when shell:true on Windows. POSIX shells use \" escaping.
+  const promptArg = isWin
+    ? `"/blog-new ""${keyword}"""`
+    : `/blog-new "${keyword}"`;
+
   const args = [
     "-p",
-    `/blog-new "${keyword}"`,
+    promptArg,
     "--permission-mode",
     permissionMode,
   ];
