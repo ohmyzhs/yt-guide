@@ -111,8 +111,18 @@ export async function POST(request) {
   // so any embedded double-quotes get mangled. Piping the prompt over stdin
   // is what Claude CLI does anyway when -p has no positional arg (see the
   // "no stdin data received" warning when both were used).
+  //
+  // Do NOT wrap the keyword in quotes. Claude expands `$ARGUMENTS` in the
+  // /blog-new command to the *literal* remainder of the line, quotes and all.
+  // With quotes the keyword becomes `"병원 마케팅"`, which (a) double-quotes
+  // the value when interpolated into the command's shell steps and (b) embeds
+  // a `"` char into the output folder name — illegal on Windows, so the run
+  // produces no folder and the job reports failure. A bare keyword expands
+  // cleanly to `병원 마케팅`; spaces survive because the command body already
+  // quotes `"$ARGUMENTS"` where a single arg is required. Safe because stdin
+  // bypasses cmd parsing and KEYWORD_RE already rejects shell metachars.
   const args = ["--permission-mode", permissionMode, "-p"];
-  const prompt = `/blog-new "${keyword}"`;
+  const prompt = `/blog-new ${keyword}`;
 
   appendLog(job, `$ ${cliBin} ${args.join(" ")}\n`);
   appendLog(job, `(stdin) ${prompt}\n`);
@@ -135,6 +145,22 @@ export async function POST(request) {
   }
   job.proc = proc;
 
+  // Watchdog: `claude -p` occasionally finishes all on-disk work but then
+  // stalls on its final turn (network read with no timeout), never emitting
+  // `close`. Without this, the job — and the UI — hang on "생성 중" forever.
+  // On timeout we kill the process; the close handler below then salvages the
+  // run if the output folder was already produced (which, given the work
+  // completes in minutes, it almost always has).
+  const timeoutMs = Number(process.env.CLAUDE_JOB_TIMEOUT_MS) || 20 * 60 * 1000;
+  let timedOut = false;
+  const watchdog = setTimeout(() => {
+    timedOut = true;
+    appendLog(job, `\n[watchdog] no exit after ${timeoutMs}ms — killing claude.\n`);
+    try {
+      proc.kill();
+    } catch {}
+  }, timeoutMs);
+
   // Feed the prompt and close stdin so claude doesn't wait for more input.
   proc.stdin.write(prompt);
   proc.stdin.end();
@@ -144,6 +170,7 @@ export async function POST(request) {
   proc.stderr.on("data", onChunk);
 
   proc.on("error", (e) => {
+    clearTimeout(watchdog);
     finishJob(job, {
       status: "error",
       error: `Process error: ${e.message}`,
@@ -151,16 +178,23 @@ export async function POST(request) {
   });
 
   proc.on("close", async (code) => {
-    if (code === 0) {
-      const folder = await detectNewFolder(outputDir, before);
-      if (folder) {
-        finishJob(job, { status: "done", folder });
-      } else {
-        finishJob(job, {
-          status: "error",
-          error: "Process exited 0 but no new folder appeared in output/.",
-        });
-      }
+    clearTimeout(watchdog);
+    // The output folder is the real success signal. A clean exit (code 0) that
+    // produced a folder is done; so is a watchdog-killed run whose folder was
+    // already written. Only treat it as an error when no folder appeared.
+    const folder = await detectNewFolder(outputDir, before);
+    if (folder) {
+      finishJob(job, { status: "done", folder });
+    } else if (code === 0) {
+      finishJob(job, {
+        status: "error",
+        error: "Process exited 0 but no new folder appeared in output/.",
+      });
+    } else if (timedOut) {
+      finishJob(job, {
+        status: "error",
+        error: `claude did not finish within ${timeoutMs}ms and produced no output folder.`,
+      });
     } else {
       finishJob(job, {
         status: "error",

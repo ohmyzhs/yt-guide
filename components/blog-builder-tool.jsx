@@ -15,9 +15,19 @@ export function BlogBuilderTool() {
   const [status, setStatus] = useState("idle");
   const [log, setLog] = useState("");
   const [result, setResult] = useState(null);
+  const [imagePrompts, setImagePrompts] = useState(null);
+  const [copiedKey, setCopiedKey] = useState(null);
   const [serverError, setServerError] = useState(null);
   const logRef = useRef(null);
   const esRef = useRef(null);
+
+  async function copyPrompt(text, key) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey((k) => (k === key ? null : k)), 1500);
+    } catch {}
+  }
 
   useEffect(() => {
     if (logRef.current) {
@@ -33,6 +43,7 @@ export function BlogBuilderTool() {
     setServerError(null);
     setLog("");
     setResult(null);
+    setImagePrompts(null);
     setStatus("running");
 
     let res;
@@ -76,7 +87,17 @@ export function BlogBuilderTool() {
       setStatus("done");
       try {
         const r = await fetch(`/api/blog/result/${id}`);
-        if (r.ok) setResult(await r.json());
+        if (!r.ok) return;
+        const data = await r.json();
+        setResult(data);
+        if (data.folder && (data.files || []).includes("image-prompts.json")) {
+          try {
+            const pr = await fetch(
+              `/api/blog/output/${encodeURIComponent(data.folder)}/image-prompts.json`,
+            );
+            if (pr.ok) setImagePrompts(await pr.json());
+          } catch {}
+        }
       } catch {}
     });
 
@@ -171,6 +192,84 @@ export function BlogBuilderTool() {
           <h2 className="mt-2 text-2xl font-black tracking-[-0.04em] text-slate-900">
             {folder}
           </h2>
+
+          {imagePrompts?.images?.length > 0 && (
+            <div className="mt-6">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
+                이미지 프롬프트 ({imagePrompts.images.length})
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                {imagePrompts.note ||
+                  "각 프롬프트를 Nano Banana 2 또는 gpt-image-2에 붙여넣어 직접 생성하세요."}
+              </p>
+              <div className="mt-4 space-y-4">
+                {imagePrompts.images.map((img, i) => (
+                  <div
+                    key={img.id ?? i}
+                    className="rounded-[1.35rem] border border-black/8 bg-white/70 p-4"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-[var(--accent-soft)] px-2.5 py-0.5 text-xs font-bold text-[var(--accent-strong)]">
+                        #{img.id ?? i + 1}
+                      </span>
+                      {img.placement && (
+                        <span className="text-sm font-semibold text-slate-800">
+                          {img.placement}
+                        </span>
+                      )}
+                    </div>
+                    {img.context && (
+                      <p className="mt-1.5 text-xs text-slate-500">{img.context}</p>
+                    )}
+                    {img.marker && (
+                      <p className="mt-1 text-xs italic text-slate-400">
+                        마커: {img.marker}
+                      </p>
+                    )}
+                    <div className="mt-3 space-y-3">
+                      {(img.options || []).map((opt, j) => {
+                        const key = `${i}-${j}`;
+                        return (
+                          <div
+                            key={key}
+                            className="rounded-[1rem] border border-black/8 bg-[var(--surface)] p-3"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex flex-wrap items-center gap-2 text-xs">
+                                {opt.style && (
+                                  <span className="rounded-full border border-black/10 px-2 py-0.5 font-semibold text-slate-700">
+                                    {opt.style}
+                                  </span>
+                                )}
+                                {opt.aspectRatio && (
+                                  <span className="font-mono text-slate-400">
+                                    {opt.aspectRatio}
+                                  </span>
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => copyPrompt(opt.prompt, key)}
+                                className="shrink-0 rounded-lg bg-[var(--accent)] px-3 py-1 text-xs font-bold text-white transition hover:bg-[var(--accent-strong)]"
+                              >
+                                {copiedKey === key ? "복사 완료" : "복사"}
+                              </button>
+                            </div>
+                            <p className="mt-2 whitespace-pre-wrap break-words font-mono text-xs leading-5 text-slate-700">
+                              {opt.prompt}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {img.altText && (
+                      <p className="mt-2 text-xs text-slate-400">alt: {img.altText}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             {filesByKind.images.length > 0 && (
