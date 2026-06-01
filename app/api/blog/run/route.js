@@ -145,13 +145,31 @@ export async function POST(request) {
   // directly. Do NOT quote the keyword: `$ARGUMENTS` keeps quotes literally,
   // which breaks the Windows output folder name.
   const args = ["--permission-mode", permissionMode, "-p"];
-  const prompt = resumeFolder
-    ? `output/${resumeFolder} 폴더에서 중단된 "${keyword}" 블로그 글을 이어서 완성해줘.\n` +
-      `규칙: (1) 새 폴더를 만들지 말고 이 폴더를 그대로 사용. ` +
-      `(2) 기존 산출물(research.json/post.md/post.html/image-prompts.json/metadata.json/guide.md)을 먼저 Read로 확인하고, 이미 완성된 STEP은 건너뛸 것 — 완성된 파일은 덮어쓰지 말 것. ` +
-      `(3) 누락된 STEP만 CLAUDE.md의 블로그 파이프라인(STEP 1~5) 순서대로 수행. ` +
-      `(4) 본문을 새로 써야 하면 공백 제외 3,500~4,000자.`
-    : `/blog-new ${keyword}`;
+  let prompt;
+  if (resumeFolder) {
+    // Name the *exact* missing deliverables. A vague "do the missing steps"
+    // lets the agent latch onto something else (e.g. lengthening post.md) and
+    // skip the genuinely-missing file — so we list them explicitly.
+    const resumeFiles = await listFiles(path.join(outputDir, resumeFolder));
+    const REQUIRED = [
+      "post.html",
+      "image-prompts.json",
+      "metadata.json",
+      "guide.md",
+    ];
+    const missing = REQUIRED.filter((f) => !resumeFiles.includes(f));
+    prompt =
+      `output/${resumeFolder} 폴더에서 중단된 "${keyword}" 블로그 글을 이어서 완성해줘. ` +
+      `이미 일부 산출물이 있으니 누락된 것만 만들어 글을 완성하면 된다.\n` +
+      `★ 반드시 새로 생성해야 할 누락 파일: ${missing.length ? missing.join(", ") : "(없음 — 품질·패키지만 재확인)"}.\n` +
+      `규칙: (1) 새 폴더를 만들지 말고 output/${resumeFolder} 를 그대로 사용. ` +
+      `(2) 이미 존재하는 완성 파일은 그대로 둔다 — 단 post.md가 공백 제외 3,500자 미만이면 3,500~4,000자로 보강해도 좋다. ` +
+      `(3) image-prompts.json 이 누락이면, post.md의 각 [IMAGE:] 마커마다 영문 이미지 프롬프트(마커당 스타일 옵션 2~3개)를 작성해 image-prompts.json 으로 저장한다. 스키마는 .claude/commands/blog-new.md STEP 3 / CLAUDE.md 를 따른다. ` +
+      `(4) metadata.json·guide.md 가 누락이면 STEP 5 패키지를 작성한다. ` +
+      `(5) 위 누락 파일을 모두 만든 뒤 종료한다.`;
+  } else {
+    prompt = `/blog-new ${keyword}`;
+  }
 
   appendLog(job, `$ ${cliBin} ${args.join(" ")}\n`);
   appendLog(job, `(stdin) ${prompt}\n`);
