@@ -16,6 +16,7 @@ const MIME = {
   ".svg": "image/svg+xml",
   ".md": "text/plain; charset=utf-8",
   ".txt": "text/plain; charset=utf-8",
+  ".log": "text/plain; charset=utf-8",
 };
 
 export async function GET(_request, { params }) {

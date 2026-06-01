@@ -2,6 +2,7 @@ import { readdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { getJob } from "@/lib/blog-job-store";
+import { inferSteps } from "@/lib/blog-progress";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,6 +36,10 @@ export async function GET(_request, { params }) {
     }
   }
 
+  // Progress is computed fresh from the files on disk so it's accurate while
+  // the job is still running, not just at finish.
+  const progress = inferSteps(files.filter((f) => !f.includes("/")));
+
   return Response.json({
     id: job.id,
     status: job.status,
@@ -44,5 +49,11 @@ export async function GET(_request, { params }) {
     error: job.error,
     startedAt: job.startedAt,
     finishedAt: job.finishedAt,
+    steps: progress.steps,
+    reachedStep: progress.reachedStep,
+    reachedLabel: progress.reachedLabel,
+    nextStep: progress.nextStep,
+    nextLabel: progress.nextLabel,
+    complete: progress.complete,
   });
 }
